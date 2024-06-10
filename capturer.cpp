@@ -1,7 +1,92 @@
 #include "capturer.h"
 
+SOCKET clientSocket;
+SOCKET listenSocket;
+
+bool get_false(UINT64 tmp) {
+    return false;
+}
+
+int close_socket() {
+    return OK;
+}
+
+int send_long(unsigned long tmp) {
+    unsigned long networkData = htonl(tmp); // Convert to network byte order
+
+    // Prepare buffer to send
+    const char* buf = reinterpret_cast<const char*>(&networkData);
+    int buflen = sizeof(networkData);
+
+    // Now you can use the send function to send the data over the network
+    int bytesSent = send(clientSocket, buf, buflen, 0);
+    if (bytesSent == SOCKET_ERROR) {
+        std::cout << "Error sending data." << tmp << std::endl;
+        return SOCKET_ERROR;
+    }
+    return OK;
+}
+int send_short(unsigned short a) {
+    // Prepare buffer to send
+    const char* buf = reinterpret_cast<const char*>(&a);
+    
+    // Now you can use the send function to send the data over the network
+    int bytesSent = send(clientSocket, buf, sizeof(a), 0);
+    if (bytesSent == SOCKET_ERROR) {
+        std::cout << "Error sending data." << a << std::endl;
+        return SOCKET_ERROR;
+    }
+    return OK;
+}
+
+int announce_format(WAVEFORMATEX *format) {
+    send_short(format->nChannels);
+    send_short(format->wBitsPerSample / 8);
+    send_short((unsigned short)format->nSamplesPerSec);
+    
+    return OK;
+}
+
 
 int main() {
+    int hr = OK;
+    
+    IMMDeviceEnumerator *enumerator = NULL;
+    IMMDevice *recorder = NULL;
+    IAudioClient *pAudioClient = NULL;
+    IAudioCaptureClient *pCaptureClient = NULL;
+    WAVEFORMATEX *format = NULL;
+
+    hr = init_server(listenSocket);
+    std::cout << "Server inited with code " << hr << std::endl;
+
+    if (hr == OK) {
+        hr = init_capturer(enumerator, recorder, pAudioClient, format);
+        HANDLE_ERROR(hr, "init_capturer", done);
+
+        hr = capture_sound(pAudioClient, pCaptureClient, format, announce_format, send_to_client, close_socket, get_false);
+        HANDLE_ERROR(hr, "capture_to_file", done);
+
+        std::cout << "Server sended with code " << hr << std::endl;
+    }
+
+    (void)closesocket(clientSocket);
+    (void)closesocket(listenSocket);
+    WSACleanup();
+
+done:
+    SAFE_RELEASE(enumerator)
+    CoTaskMemFree(format);
+    SAFE_RELEASE(pCaptureClient)
+    SAFE_RELEASE(pAudioClient)
+    SAFE_RELEASE(recorder)
+
+    CoUninitialize();
+
+    return hr;
+}
+
+int run_wav_recording() {
     int hr = OK;
 
     IMMDeviceEnumerator *enumerator = NULL;

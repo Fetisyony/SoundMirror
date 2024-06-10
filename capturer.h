@@ -4,7 +4,8 @@
 #include <iostream>
 #include <string>
 
-#include <Windows.h>
+#include "server.h"
+#include <windows.h>
 #include <initguid.h>
 #include <Audioclient.h>
 #include <mmdeviceapi.h>
@@ -27,6 +28,8 @@
     }
 
 HRESULT check_error(HRESULT hres, std::string message);
+
+int run_wav_recording();
 
 void print_format(WAVEFORMATEX *format);
 
