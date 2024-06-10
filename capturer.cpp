@@ -1,16 +1,5 @@
 #include "capturer.h"
 
-const char *filename = "output.wav";
-
-DWORD cksize = sizeof(WAVEFORMATEXTENSIBLE);
-int HEADER_SIZE = 4 + 4 + 4 + 4 + 4 + cksize + 4 + 4;  // 68
-
-
-#define HANDLE_ERROR(hr, message, label) if (FAILED(hr)) { \
-    std::cout << "Error: " << message << "- failed (" << hr << ")" << std::endl; \
-    goto label; \
-}
-
 
 int main() {
     int hr = OK;
@@ -22,12 +11,10 @@ int main() {
     WAVEFORMATEX *format = NULL;
 
     hr = init_capturer(enumerator, recorder, pAudioClient, format);
+    HANDLE_ERROR(hr, "init_capturer", done);
 
-    if (SUCCEEDED(hr)) {
-        hr = run_service(pAudioClient, pCaptureClient, format);
-        HANDLE_ERROR(hr, "run_service", done);
-    }
-
+    hr = capture_sound(pAudioClient, pCaptureClient, format, initWavFile, writeWavData, close_file, is_enough);
+    HANDLE_ERROR(hr, "capture_to_file", done);
 
 done:
     SAFE_RELEASE(enumerator)
@@ -57,41 +44,6 @@ void print_format(WAVEFORMATEX *format) {
     printf("  Size:   : %d\n", format->cbSize);
 }
 
-void initWavFile(FILE *file, WAVEFORMATEX *format) {
-    WAVEFORMATEXTENSIBLE *pWaveFormatExtensible;
-    pWaveFormatExtensible = reinterpret_cast<WAVEFORMATEXTENSIBLE *>(format);
-
-    assert (pWaveFormatExtensible->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT);
-
-    int file_size = HEADER_SIZE;
-
-    fwrite("RIFF", 1, 4, file);         // offset 0
-    fwrite(&file_size, 4, 1, file);     // offset 4
-
-    fwrite("WAVE", 1, 4, file);         // offset 8
-    fwrite("fmt ", 1, 4, file);         // offset 12
-    fwrite(&cksize, 4, 1, file);        // offset 16
-    fwrite(format, cksize, 1, file);    // offset 20
-
-    fwrite("data", 1, 4, file);         // offset 60
-    // fwrite(&dataSize, 4, 1, file);   // offset 64
-    // fwrite(data, dataSize, 1, file); // offset 68
-}
-
-void writeWavData(FILE *file, BYTE *data, int oldDataSize, int newDataSize) {
-    int fullDataSize = newDataSize + oldDataSize;
-    int file_size = HEADER_SIZE + fullDataSize;
-
-    fseek(file, 4, SEEK_SET);
-    fwrite(&file_size, 4, 1, file);
-
-    fseek(file, 64, SEEK_SET);
-    fwrite(&fullDataSize, 4, 1, file);
-
-    fseek(file, HEADER_SIZE + oldDataSize, SEEK_SET);
-    fwrite(data, newDataSize, 1, file);
-}
-
 HRESULT init_client(IAudioClient *pAudioClient, WAVEFORMATEX *format, int secs_in_buffer) {
     HRESULT hr = OK;
 
@@ -107,65 +59,66 @@ HRESULT init_client(IAudioClient *pAudioClient, WAVEFORMATEX *format, int secs_i
     // pAudioClient->GetDevicePeriod(&pDefaultPeriod, &pMinimumPeriod);
     // will give 100000 and 30000 - 10 ms and 3 ms
 
-    UINT32 tmp;
-    pAudioClient->GetBufferSize(&tmp);
-    std::cout << "Buffer frames number: " << tmp << std::endl;
-    std::cout << "Buffer size: " << ((10000.0 * 1000 / format->nSamplesPerSec * tmp) + 0.5) << std::endl;
-    std::cout << "Requested buffer size: " << hnsBufferDuration << std::endl;
+    // pAudioClient->GetBufferSize(&tmp);  // 480000
 
     return hr;
 }
 
-HRESULT run_service(IAudioClient *pAudioClient, IAudioCaptureClient *&pCaptureClient, WAVEFORMATEX *format) {
+HRESULT capture_sound(IAudioClient *pAudioClient, IAudioCaptureClient *&pCaptureClient, WAVEFORMATEX *format, int init_data(WAVEFORMATEX *format), int (*proc_data)(BYTE *captureBuffer, UINT32 bytes_captured), int (*finish)(void), bool (*enough)(UINT64 bytes_in_second)) {
     HRESULT hr = OK;
 
-    UINT64 totalBytesWritten = 0;
+    bool RUNNING = true;
+
     UINT32 nFrames;
     DWORD flags;
     BYTE *captureBuffer;
+    UINT32 packetLength = 0;
+
+    UINT64 bytes_in_second;
 
     hr = pAudioClient->GetService(IID_IAudioCaptureClient, (void**)&pCaptureClient);
-    assert(SUCCEEDED(hr));
+    HANDLE_ERROR(hr, "GetService", loop_end);
     hr = pAudioClient->Start();
-    assert(SUCCEEDED(hr));
+    HANDLE_ERROR(hr, "Start", loop_end);
 
-    FILE *file = fopen(filename, "wb");
-    if (file == NULL) {
-        printf("Error opening file\n");
-        return FILE_ERROR;
-    }
+    init_data(format);
 
-    initWavFile(file, format);
+    bytes_in_second = format->nSamplesPerSec * (format->wBitsPerSample / 8) * format->nChannels;
 
-    UINT64 bytes_in_second = format->nSamplesPerSec * (format->wBitsPerSample / 8) * format->nChannels;
-    while (totalBytesWritten < bytes_in_second * RECORDING_DURATION_SECONDS) {
-        hr = pCaptureClient->GetBuffer(&captureBuffer, &nFrames, &flags, NULL, NULL);
-        assert(SUCCEEDED(hr));
+    while (RUNNING && !enough(bytes_in_second)) {
+        Sleep(SECONDS_IN_SHARED_BUFFER * 1000 / 100);
 
-        if (nFrames != 0) {
-            if (flags & AUDCLNT_BUFFERFLAGS_SILENT) {
-                puts("There is silence!");  // Tell CopyData to write silence.
+        pCaptureClient->GetNextPacketSize(&packetLength);
+        HANDLE_ERROR(hr, "GetNextPacketSize", loop_end);
+    
+        while (RUNNING && packetLength != 0 && !enough(bytes_in_second)) {
+            hr = pCaptureClient->GetBuffer(&captureBuffer, &nFrames, &flags, NULL, NULL);
+            HANDLE_ERROR(hr, "GetBuffer", loop_end);
+
+            if (nFrames != 0) {
+                if (flags & AUDCLNT_BUFFERFLAGS_SILENT) {
+                    puts("There is silence!");  // Tell CopyData to write silence.
+                }
+
+                UINT32 bytes_captured = format->nBlockAlign * nFrames;
+                proc_data(captureBuffer, bytes_captured);
             }
 
-            UINT32 bytes_captured = format->nBlockAlign * nFrames;
-
-            writeWavData(file, captureBuffer, totalBytesWritten, bytes_captured);
-
-            totalBytesWritten += bytes_captured;
-        }
-
-        hr = pCaptureClient->ReleaseBuffer(nFrames);
-        if (FAILED(hr)) {
-            std::cout << "ReleaseBuffer failed (" << hr << ")" << std::endl;
-            break;
+            hr = pCaptureClient->ReleaseBuffer(nFrames);
+            HANDLE_ERROR(hr, "ReleaseBuffer", loop_end);
+            
+            pCaptureClient->GetNextPacketSize(&packetLength);
+            HANDLE_ERROR(hr, "GetNextPacketSize", loop_end);
         }
     }
 
-    fclose(file);
+loop_end:
+    finish();
     pAudioClient->Stop();
 
     return hr;
 }
+
 
 int init_capturer(IMMDeviceEnumerator *&enumerator, IMMDevice *&recorder, IAudioClient *&pAudioClient, WAVEFORMATEX *&format) {
     HRESULT hr = OK;
