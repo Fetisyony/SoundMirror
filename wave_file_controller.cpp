@@ -39,7 +39,7 @@ int initWavFile(WAVEFORMATEX *format) {
     return OK;
 }
 
-int writeWavData(BYTE *data, UINT32 new_data_size) {
+int writeWavData(BYTE *data, UINT32 new_data_size, WAVEFORMATEX *format) {
     if (file == NULL) {
         std::cout << "Error while accessing file in write wav data" << std::endl;
         return FILE_ERROR;

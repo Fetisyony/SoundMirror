@@ -12,6 +12,7 @@
 using std::cout;
 using std::endl;
 
+typedef unsigned char BYTE;
 
 int init_server(SOCKET &listenSocket);
 
@@ -26,3 +27,5 @@ unsigned short swap_endianess(unsigned short value);
 bool get_false(UINT64 tmp);
 
 int close_socket();
+
+int run_test(void);

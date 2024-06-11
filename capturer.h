@@ -18,6 +18,8 @@ using std::cout;
 using std::endl;
 using std::string;
 
+typedef unsigned char BYTE;
+
 // Define the length of audio capture in seconds
 #define SECONDS_IN_SHARED_BUFFER 5
 
@@ -34,12 +36,18 @@ using std::string;
 
 HRESULT check_error(HRESULT hres, string message);
 
-int run_wav_recording();
+int run_socket(IMMDeviceEnumerator *enumerator, IMMDevice *recorder, IAudioClient *pAudioClient, IAudioCaptureClient *pCaptureClient, WAVEFORMATEX *format);
+
+int run_wav_recording(IMMDeviceEnumerator *enumerator, IMMDevice *recorder, IAudioClient *pAudioClient, IAudioCaptureClient *pCaptureClient, WAVEFORMATEX *format);
+
+int ConvertEndianness(BYTE *pData, UINT32 numFrames, WAVEFORMATEX *pwfx);
+
+int convert_endianess_and_send(BYTE* pData, UINT32 nFrames, WAVEFORMATEX *&format);
 
 void print_format(WAVEFORMATEX *format);
 
 HRESULT init_client(IAudioClient *pAudioClient, WAVEFORMATEX *format, int secs_in_buffer);
 
-HRESULT capture_sound(IAudioClient *pAudioClient, IAudioCaptureClient *&pCaptureClient, WAVEFORMATEX *format, int init_data(WAVEFORMATEX *format), int (*proc_data)(BYTE *captureBuffer, UINT32 bytes_captured), int (*finish)(void), bool (*enough)(UINT64 bytes_in_second));
+HRESULT capture_sound(IAudioClient *pAudioClient, IAudioCaptureClient *&pCaptureClient, WAVEFORMATEX *format, int init_data(WAVEFORMATEX *format), int (*proc_data)(BYTE *captureBuffer, UINT32 bytes_captured, WAVEFORMATEX *format), int (*finish)(void), bool (*enough)(UINT64 bytes_in_second));
 
 int init_capturer(IMMDeviceEnumerator* &enumerator, IMMDevice* &recorder, IAudioClient* &pAudioClient, WAVEFORMATEX* &format);

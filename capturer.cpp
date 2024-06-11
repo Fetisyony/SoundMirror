@@ -5,7 +5,6 @@ SOCKET listenSocket;
 
 UINT64 passed = 0;
 
-
 int main() {
     int hr = OK;
 
@@ -15,24 +14,10 @@ int main() {
     IAudioCaptureClient *pCaptureClient = NULL;
     WAVEFORMATEX *format = NULL;
 
-    hr = init_server(listenSocket);
-    std::cout << "Server inited with code " << hr << std::endl;
+    hr = run_socket(enumerator, recorder, pAudioClient, pCaptureClient, format);
+    HANDLE_ERROR(hr, "run_socket", exit);
 
-    if (hr == OK) {
-        hr = init_capturer(enumerator, recorder, pAudioClient, format);
-        HANDLE_ERROR(hr, "init_capturer", done);
-
-        hr = capture_sound(pAudioClient, pCaptureClient, format, announce_format, send_to_client, close_socket, get_false);
-        HANDLE_ERROR(hr, "capture_to_file", done);
-
-        std::cout << "Server sended with code " << hr << std::endl;
-    }
-
-    (void)closesocket(clientSocket);
-    (void)closesocket(listenSocket);
-    WSACleanup();
-
-done:
+exit:
     SAFE_RELEASE(enumerator)
     CoTaskMemFree(format);
     SAFE_RELEASE(pCaptureClient)
@@ -44,14 +29,72 @@ done:
     return hr;
 }
 
-int run_wav_recording() {
+int ConvertEndianness(BYTE *pData, UINT32 numFrames, WAVEFORMATEX *pwfx) {
+    if (pwfx->wBitsPerSample == 16) {
+        UINT32 numSamples = numFrames * pwfx->nChannels;
+        for (UINT32 i = 0; i < numSamples; ++i) {
+            BYTE temp = pData[i * 2];
+            pData[i * 2] = pData[i * 2 + 1];
+            pData[i * 2 + 1] = temp;
+        }
+    } else if (pwfx->wBitsPerSample == 24) {
+        UINT32 numSamples = numFrames * pwfx->nChannels;
+        for (UINT32 i = 0; i < numSamples; ++i) {
+            BYTE temp = pData[i * 3];
+            pData[i * 3] = pData[i * 3 + 2];
+            pData[i * 3 + 2] = temp;
+        }
+    } else if (pwfx->wBitsPerSample == 32) {
+        UINT32 numSamples = numFrames * pwfx->nChannels;
+        for (UINT32 i = 0; i < numSamples; ++i) {
+            BYTE temp1 = pData[i * 4];
+            BYTE temp2 = pData[i * 4 + 1];
+            pData[i * 4] = pData[i * 4 + 3];
+            pData[i * 4 + 1] = pData[i * 4 + 2];
+            pData[i * 4 + 2] = temp2;
+            pData[i * 4 + 3] = temp1;
+        }
+    }
+    return OK;
+}
+
+int convert_endianess_and_send(BYTE* pData, UINT32 nFrames, WAVEFORMATEX *format) {
+    int rc = OK;
+    UINT32 bytes_captured = format->nBlockAlign * nFrames;
+    // Convert the audio data from little-endian to big-endian
+    ConvertEndianness(pData, nFrames, format);
+
+    // Here you can save the data, send it to another process, etc.
+    rc = send_to_client(pData, bytes_captured);
+    return rc;
+}
+
+int run_socket(IMMDeviceEnumerator *enumerator, IMMDevice *recorder, IAudioClient *pAudioClient, IAudioCaptureClient *pCaptureClient, WAVEFORMATEX *format) {
     int hr = OK;
 
-    IMMDeviceEnumerator *enumerator = NULL;
-    IMMDevice *recorder = NULL;
-    IAudioClient *pAudioClient = NULL;
-    IAudioCaptureClient *pCaptureClient = NULL;
-    WAVEFORMATEX *format = NULL;
+    hr = init_server(listenSocket);
+    cout << "Server inited with code " << hr << endl;
+
+    if (hr == OK) {
+        hr = init_capturer(enumerator, recorder, pAudioClient, format);
+        HANDLE_ERROR(hr, "init_capturer", exit);
+
+        hr = capture_sound(pAudioClient, pCaptureClient, format, announce_format, convert_endianess_and_send, close_socket, get_false);
+        HANDLE_ERROR(hr, "capture_to_file", exit);
+
+        cout << "Server sended with code " << hr << endl;
+    }
+
+exit:
+    (void)closesocket(clientSocket);
+    (void)closesocket(listenSocket);
+    WSACleanup();
+
+    return hr;
+}
+
+int run_wav_recording(IMMDeviceEnumerator *enumerator, IMMDevice *recorder, IAudioClient *pAudioClient, IAudioCaptureClient *pCaptureClient, WAVEFORMATEX *format) {
+    int hr = OK;
 
     hr = init_capturer(enumerator, recorder, pAudioClient, format);
     HANDLE_ERROR(hr, "init_capturer", done);
@@ -60,14 +103,6 @@ int run_wav_recording() {
     HANDLE_ERROR(hr, "capture_to_file", done);
 
 done:
-    SAFE_RELEASE(enumerator)
-    CoTaskMemFree(format);
-    SAFE_RELEASE(pCaptureClient)
-    SAFE_RELEASE(pAudioClient)
-    SAFE_RELEASE(recorder)
-
-    CoUninitialize();
-
     return hr;
 }
 
@@ -107,7 +142,7 @@ HRESULT init_client(IAudioClient *pAudioClient, WAVEFORMATEX *format, int secs_i
     return hr;
 }
 
-HRESULT capture_sound(IAudioClient *pAudioClient, IAudioCaptureClient *&pCaptureClient, WAVEFORMATEX *format, int init_data(WAVEFORMATEX *format), int (*proc_data)(BYTE *captureBuffer, UINT32 bytes_captured), int (*finish)(void), bool (*enough)(UINT64 bytes_in_second)) {
+HRESULT capture_sound(IAudioClient *pAudioClient, IAudioCaptureClient *&pCaptureClient, WAVEFORMATEX *format, int init_data(WAVEFORMATEX *format), int (*proc_data)(BYTE *captureBuffer, UINT32 bytes_captured, WAVEFORMATEX *format), int (*finish)(void), bool (*enough)(UINT64 bytes_in_second)) {
     HRESULT hr = OK;
 
     bool RUNNING = true;
@@ -129,8 +164,6 @@ HRESULT capture_sound(IAudioClient *pAudioClient, IAudioCaptureClient *&pCapture
     bytes_in_second = format->nSamplesPerSec * (format->wBitsPerSample / 8) * format->nChannels;
 
     while (RUNNING && !enough(bytes_in_second)) {
-        Sleep(SECONDS_IN_SHARED_BUFFER * 1000 / 100);
-
         pCaptureClient->GetNextPacketSize(&packetLength);
         HANDLE_ERROR(hr, "GetNextPacketSize", loop_end);
     
@@ -143,8 +176,9 @@ HRESULT capture_sound(IAudioClient *pAudioClient, IAudioCaptureClient *&pCapture
                     puts("There is silence!");  // Tell CopyData to write silence.
                 }
 
-                UINT32 bytes_captured = format->nBlockAlign * nFrames;
-                proc_data(captureBuffer, bytes_captured);
+                hr = proc_data(captureBuffer, nFrames, format);
+                if (hr != OK)
+                    RUNNING = false;
             }
 
             hr = pCaptureClient->ReleaseBuffer(nFrames);
