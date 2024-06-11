@@ -3,54 +3,12 @@
 SOCKET clientSocket;
 SOCKET listenSocket;
 
-bool get_false(UINT64 tmp) {
-    return false;
-}
-
-int close_socket() {
-    return OK;
-}
-
-int send_long(unsigned long tmp) {
-    unsigned long networkData = htonl(tmp); // Convert to network byte order
-
-    // Prepare buffer to send
-    const char* buf = reinterpret_cast<const char*>(&networkData);
-    int buflen = sizeof(networkData);
-
-    // Now you can use the send function to send the data over the network
-    int bytesSent = send(clientSocket, buf, buflen, 0);
-    if (bytesSent == SOCKET_ERROR) {
-        std::cout << "Error sending data." << tmp << std::endl;
-        return SOCKET_ERROR;
-    }
-    return OK;
-}
-int send_short(unsigned short a) {
-    // Prepare buffer to send
-    const char* buf = reinterpret_cast<const char*>(&a);
-    
-    // Now you can use the send function to send the data over the network
-    int bytesSent = send(clientSocket, buf, sizeof(a), 0);
-    if (bytesSent == SOCKET_ERROR) {
-        std::cout << "Error sending data." << a << std::endl;
-        return SOCKET_ERROR;
-    }
-    return OK;
-}
-
-int announce_format(WAVEFORMATEX *format) {
-    send_short(format->nChannels);
-    send_short(format->wBitsPerSample / 8);
-    send_short((unsigned short)format->nSamplesPerSec);
-    
-    return OK;
-}
+UINT64 passed = 0;
 
 
 int main() {
     int hr = OK;
-    
+
     IMMDeviceEnumerator *enumerator = NULL;
     IMMDevice *recorder = NULL;
     IAudioClient *pAudioClient = NULL;
@@ -203,7 +161,6 @@ loop_end:
 
     return hr;
 }
-
 
 int init_capturer(IMMDeviceEnumerator *&enumerator, IMMDevice *&recorder, IAudioClient *&pAudioClient, WAVEFORMATEX *&format) {
     HRESULT hr = OK;

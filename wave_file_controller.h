@@ -10,7 +10,7 @@
 #include <iostream>
 #include <string>
 
-#include "errors.h"
+#include "file_errors.h"
 
 #define RECORDING_DURATION_SECONDS 5
 

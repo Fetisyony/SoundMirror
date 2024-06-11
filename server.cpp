@@ -1,21 +1,7 @@
-#include <stdio.h>
-#include <iostream>
-
-#include <winsock2.h>
-#include <windows.h>
-
-#include "errors.h"
-
-#define PORT 20000
-
-#define ERROR_WSAFAILED 2
-#define ERROR_SOCKETFAILED 3
-#define ERROR_BIND_FAILED 4
-#define ERROR_LISTEN_FAILED 5
-#define ERROR_ACCEPT_FAILED 6
-#define ERROR_SEND_FAILED 7
+#include "server.h"
 
 extern SOCKET clientSocket;
+extern UINT64 passed;
 
 void SetNonBlocking(SOCKET socket) {
     u_long mode = 1;
@@ -85,6 +71,41 @@ int send_to_client(BYTE *message, UINT32 size) {
     }
 
     return rc;
+}
+
+bool get_false(UINT64 tmp) {
+    passed += tmp;
+    return false;
+}
+
+int close_socket() {
+    return OK;
+}
+
+unsigned short swap_endianess(unsigned short value) {
+    return (value << 8) | (value >> 8);
+}
+
+int send_short(unsigned short input_little_end) {
+    // Prepare buffer to send
+    unsigned short input_big_end = swap_endianess(input_little_end);
+    const char* buf = reinterpret_cast<const char*>(&input_big_end);
+    
+    // Now you can use the send function to send the data over the network
+    int bytesSent = send(clientSocket, buf, sizeof(input_big_end), 0);
+    if (bytesSent == SOCKET_ERROR) {
+        cout << "Error sending data." << input_little_end << endl;
+        return SOCKET_ERROR;
+    }
+    return OK;
+}
+
+int announce_format(WAVEFORMATEX *format) {
+    send_short(format->nChannels);
+    send_short(format->wBitsPerSample / 8);
+    send_short((unsigned short)format->nSamplesPerSec);
+    
+    return OK;
 }
 
 int run(void) {

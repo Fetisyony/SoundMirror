@@ -1,23 +1,28 @@
 #pragma once
 
-#include <stdio.h>
 #include <iostream>
 #include <string>
 
-#include "server.h"
+#include <winsock2.h>
 #include <windows.h>
 #include <initguid.h>
 #include <Audioclient.h>
 #include <mmdeviceapi.h>
 #include <mmreg.h>
 
+#include "server.h"
+#include "server_errors.h"
 #include "wave_file_controller.h"
+
+using std::cout;
+using std::endl;
+using std::string;
 
 // Define the length of audio capture in seconds
 #define SECONDS_IN_SHARED_BUFFER 5
 
 #define HANDLE_ERROR(hr, message, label) if (FAILED(hr)) { \
-    std::cout << "Error: " << message << "- failed (" << hr << ")" << std::endl; \
+    cout << "Error: " << message << "- failed (" << hr << ")" << endl; \
     goto label; \
 }
 
@@ -27,7 +32,7 @@
         (punk) = NULL;     \
     }
 
-HRESULT check_error(HRESULT hres, std::string message);
+HRESULT check_error(HRESULT hres, string message);
 
 int run_wav_recording();
 
