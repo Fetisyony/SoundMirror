@@ -10,8 +10,6 @@
 #include <mmdeviceapi.h>
 #include <mmreg.h>
 
-#include "server.h"
-#include "server_errors.h"
 #include "wave_file_controller.h"
 
 using std::cout;
@@ -21,7 +19,7 @@ using std::string;
 typedef unsigned char BYTE;
 
 // Define the length of audio capture in seconds
-#define SECONDS_IN_SHARED_BUFFER 5
+#define SECONDS_IN_SHARED_BUFFER 1
 
 #define HANDLE_ERROR(hr, message, label) if (FAILED(hr)) { \
     cout << "Error: " << message << "- failed (" << hr << ")" << endl; \
@@ -34,15 +32,9 @@ typedef unsigned char BYTE;
         (punk) = NULL;     \
     }
 
-HRESULT check_error(HRESULT hres, string message);
-
-int run_socket(IMMDeviceEnumerator *enumerator, IMMDevice *recorder, IAudioClient *pAudioClient, IAudioCaptureClient *pCaptureClient, WAVEFORMATEX *format);
-
 int run_wav_recording(IMMDeviceEnumerator *enumerator, IMMDevice *recorder, IAudioClient *pAudioClient, IAudioCaptureClient *pCaptureClient, WAVEFORMATEX *format);
 
-int ConvertEndianness(BYTE *pData, UINT32 numFrames, WAVEFORMATEX *pwfx);
-
-int convert_endianess_and_send(BYTE* pData, UINT32 nFrames, WAVEFORMATEX *&format);
+int swap_sound_endianess(BYTE *pData, UINT32 numFrames, WAVEFORMATEX *pwfx);
 
 void print_format(WAVEFORMATEX *format);
 

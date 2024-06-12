@@ -1,14 +1,10 @@
 #pragma once
 
 #include <stdio.h>
-#include <Windows.h>
-#include <initguid.h>
-#include <Audioclient.h>
-#include <mmdeviceapi.h>
-#include <assert.h>
-#include <mmreg.h>
 #include <iostream>
-#include <string>
+#include <windows.h>
+
+#include <mmreg.h>
 
 #include "file_errors.h"
 

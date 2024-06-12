@@ -20,7 +20,9 @@ int initWavFile(WAVEFORMATEX *format) {
     WAVEFORMATEXTENSIBLE *pWaveFormatExtensible;
     pWaveFormatExtensible = reinterpret_cast<WAVEFORMATEXTENSIBLE *>(format);
 
-    assert (pWaveFormatExtensible->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT);
+    if (pWaveFormatExtensible->SubFormat != KSDATAFORMAT_SUBTYPE_IEEE_FLOAT) {
+        return -1;
+    }
 
     int file_size = HEADER_SIZE;
 

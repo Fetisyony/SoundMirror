@@ -1,7 +1,5 @@
 #include "server.h"
 
-extern SOCKET clientSocket;
-extern UINT64 passed;
 
 void SetNonBlocking(SOCKET socket) {
     u_long mode = 1;
@@ -85,11 +83,9 @@ unsigned short swap_endianess(unsigned short value) {
 }
 
 int send_short(unsigned short input_little_end) {
-    // Prepare buffer to send
     unsigned short input_big_end = swap_endianess(input_little_end);
     BYTE *buf = reinterpret_cast<BYTE *>(&input_big_end);
     
-    // Now you can use the send function to send the data over the network
     int bytesSent = send_to_client(buf, sizeof(input_big_end));
     if (bytesSent == SOCKET_ERROR) {
         cout << "Error sending data." << input_little_end << endl;
@@ -99,9 +95,16 @@ int send_short(unsigned short input_little_end) {
 }
 
 int announce_format(WAVEFORMATEX *format) {
-    send_short(format->nChannels);
-    send_short(format->wBitsPerSample / 8);
-    send_short((unsigned short)format->nSamplesPerSec);
+    int rc = OK;
+
+    if (rc == OK)
+        rc = send_short(format->nChannels);
+
+    if (rc == OK)
+        rc = send_short(format->wBitsPerSample / 8);
+
+    if (rc == OK)
+        rc = send_short((unsigned short)format->nSamplesPerSec);
     
     return OK;
 }

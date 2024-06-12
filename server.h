@@ -14,6 +14,9 @@ using std::endl;
 
 typedef unsigned char BYTE;
 
+extern SOCKET clientSocket;
+extern UINT64 passed;
+
 int init_server(SOCKET &listenSocket);
 
 int send_to_client(BYTE *message, UINT32 size);
