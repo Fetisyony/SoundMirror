@@ -18,8 +18,7 @@ using std::string;
 
 typedef unsigned char BYTE;
 
-// Define the length of audio capture in seconds
-#define SECONDS_IN_SHARED_BUFFER 1
+#define SECONDS_IN_SHARED_BUFFER 4
 
 #define HANDLE_ERROR(hr, message, label) if (FAILED(hr)) { \
     cout << "Error: " << message << "- failed (" << hr << ")" << endl; \

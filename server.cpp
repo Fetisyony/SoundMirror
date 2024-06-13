@@ -1,11 +1,12 @@
 #include "server.h"
 
-
-void SetNonBlocking(SOCKET socket) {
-    u_long mode = 1;
-    if (ioctlsocket(socket, FIONBIO, &mode) != NO_ERROR) {
-        std::cerr << "Failed to set non-blocking mode: " << WSAGetLastError() << std::endl;
-    }
+void show_hostinfo() {
+    char hostname[1024];
+    gethostname(hostname, 1024);
+    struct hostent *host = gethostbyname(hostname);
+    char* ip = inet_ntoa(*(struct in_addr *)host->h_addr_list[0]);
+    printf("Server listening on port %d\n", PORT);
+    printf("Host IP: %s\n", ip);
 }
 
 int init_server(SOCKET &listenSocket) {
@@ -37,15 +38,8 @@ int init_server(SOCKET &listenSocket) {
         rc = ERROR_LISTEN_FAILED;
     }
 
-    if (rc == OK) {
-        // showing host ip
-        char hostname[1024];
-        gethostname(hostname, 1024);
-        struct hostent *host = gethostbyname(hostname);
-        char* ip = inet_ntoa(*(struct in_addr *)host->h_addr_list[0]);
-        printf("Server listening on port %d\n", PORT);
-        printf("Host IP: %s\n", ip);
-    }
+    if (rc == OK)
+        show_hostinfo();
 
     struct sockaddr_in clientAddr;
     int clientAddrSize = sizeof(clientAddr);
@@ -55,7 +49,7 @@ int init_server(SOCKET &listenSocket) {
             rc = ERROR_ACCEPT_FAILED;
     }
 
-    std::cout << "Accepted" << std::endl;
+    cout << "Accepted" << endl;
 
     return rc;
 }
@@ -64,7 +58,7 @@ int send_to_client(BYTE *message, UINT32 size) {
     int bytes_send = send(clientSocket, reinterpret_cast<const char *>(message), size, 0);
     if (bytes_send == SOCKET_ERROR) {
         cout << "Error while sending" << endl;
-        return SOCKET_ERROR;
+        return DISCONNECTED;
     }
     return OK;
 }
@@ -115,12 +109,12 @@ int run_test(void) {
     SOCKET listenSocket;
 
     rc = init_server(listenSocket);
-    std::cout << "Server inited with code " << rc << std::endl;
+    cout << "Server inited with code " << rc << endl;
 
     if (rc == OK)
         rc = send_to_client((BYTE *)"hello", 5);
 
-    std::cout << "Server sended with code " << rc << std::endl;
+    cout << "Server sended with code " << rc << endl;
 
     (void)closesocket(clientSocket);
     (void)closesocket(listenSocket);

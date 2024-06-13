@@ -10,6 +10,16 @@ UINT64 passed = 0;
 int main() {
     int hr = OK;
 
+    while (launch_streaming() == DISCONNECTED) {
+        cout << "Client disconnected" << endl;
+    }
+
+    return hr;
+}
+
+int launch_streaming() {
+    int hr = OK;
+
     IMMDeviceEnumerator *enumerator = NULL;
     IMMDevice *recorder = NULL;
     IAudioClient *pAudioClient = NULL;

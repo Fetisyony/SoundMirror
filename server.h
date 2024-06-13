@@ -21,6 +21,8 @@ int init_server(SOCKET &listenSocket);
 
 int send_to_client(BYTE *message, UINT32 size);
 
+void show_hostinfo();
+
 int announce_format(WAVEFORMATEX *format);
 
 int send_short(unsigned short input_little_end);

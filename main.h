@@ -2,6 +2,9 @@
 
 #include "capturer.h"
 #include "server.h"
+#include "server_errors.h"
+
+int launch_streaming();
 
 int convert_endianess_and_send(BYTE* pData, UINT32 nFrames, WAVEFORMATEX *format);
 
