@@ -1,2 +1,6 @@
 *.exe
 *.bat
+.vscode
+scripts
+output
+music_example
