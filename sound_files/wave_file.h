@@ -6,7 +6,9 @@
 
 #include <mmreg.h>
 
-#include "file_errors.h"
+#include "../errors.h"
+
+#define ERROR_FILE 31
 
 #define RECORDING_DURATION_SECONDS 5
 

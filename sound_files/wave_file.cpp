@@ -1,4 +1,4 @@
-#include "wave_file_controller.h"
+#include "wave_file.h"
 
 
 DWORD cksize = sizeof(WAVEFORMATEXTENSIBLE);
@@ -14,7 +14,7 @@ int initWavFile(WAVEFORMATEX *format) {
     file = fopen(filename, "wb");
     if (file == NULL) {
         std::cout << "Error while opening file" << std::endl;
-        return FILE_ERROR;
+        return ERROR;
     }
 
     WAVEFORMATEXTENSIBLE *pWaveFormatExtensible;
@@ -44,7 +44,7 @@ int initWavFile(WAVEFORMATEX *format) {
 int writeWavData(BYTE *data, UINT32 new_data_size, WAVEFORMATEX *format) {
     if (file == NULL) {
         std::cout << "Error while accessing file in write wav data" << std::endl;
-        return FILE_ERROR;
+        return ERROR_FILE;
     }
 
     int new_full_data_size = new_data_size + written_data_size;
@@ -71,7 +71,7 @@ bool is_enough(UINT64 bytes_in_second) {
 int close_file() {
     if (file == NULL) {
         std::cout << "Error while closing unexisting file" << std::endl;
-        return FILE_ERROR;
+        return ERROR_FILE;
     }
     fclose(file);
     return OK;
