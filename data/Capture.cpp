@@ -2,8 +2,12 @@
 #include "../errors.h"
 
 
-bool is_enough(UINT64 received, UINT64 bytes_in_second, double chunkSeconds) {
-    return received >= bytes_in_second * chunkSeconds;
+bool is_enough(UINT64 received, UINT64 bytesInSecond, double chunkSeconds) {
+    return received >= bytesInSecond * chunkSeconds;
+}
+
+UINT64 Capture::getBytesInSecond() {
+    return bytesInSecond;
 }
 
 HRESULT Capture::startSoundCapture() {
@@ -16,13 +20,13 @@ HRESULT Capture::startSoundCapture() {
     hr = pAudioClient->Start();
     HANDLE_RET_CODE(hr, "Start", done);
 
-    bytes_in_second = format->nSamplesPerSec * (format->wBitsPerSample / 8) * format->nChannels;
+    bytesInSecond = format->nSamplesPerSec * (format->wBitsPerSample / 8) * format->nChannels;
 
 done:
     return hr;
 }
 
-HRESULT Capture::collectSound(double chunkSeconds, BYTE *destBuffer, UINT64 *totalReceived) {
+HRESULT Capture::collectSound(double chunkSeconds, BYTE *destBuffer, UINT64 *totalReceived, UINT64 bufferLimit) {
     HRESULT hr = OK;
     int rc_process = OK;
 
@@ -31,20 +35,25 @@ HRESULT Capture::collectSound(double chunkSeconds, BYTE *destBuffer, UINT64 *tot
     hr = pCaptureClient->GetNextPacketSize(&packetLength);
     HANDLE_RET_CODE(hr, "GetNextPacketSize", done);
 
-    while (!stopCollection && packetLength != 0 && !is_enough(received, bytes_in_second, chunkSeconds)) {
+    while (runCollecting && !is_enough(received, bytesInSecond, chunkSeconds) && received < bufferLimit) {
         hr = pCaptureClient->GetBuffer(&captureBuffer, &nFrames, &flags, NULL, NULL);
         HANDLE_RET_CODE(hr, "GetBuffer", done);
 
-        UINT64 nBytes = nFrames * format->nBlockAlign;
-        received += nBytes;
-        memcpy(destBuffer, captureBuffer, nBytes);
+        UINT64 nMaxFrames = min((bufferLimit - received) / format->nBlockAlign, (UINT64)nFrames);
+        UINT64 nMaxBytes = nMaxFrames * format->nBlockAlign;
+        // n <= (bufferLimit - received) / format->nBlockAlign
+        // max {n: n <= nFrames}: n * format->nBlockAlign <= bufferLimit
+        received += nMaxBytes;
+        memcpy(destBuffer, captureBuffer, nMaxBytes);
 
+        // well, we took frames that we can accept, let's just skip ones that left
         hr = pCaptureClient->ReleaseBuffer(nFrames);
         HANDLE_RET_CODE(hr, "ReleaseBuffer", done);
 
         hr = pCaptureClient->GetNextPacketSize(&packetLength);
         HANDLE_RET_CODE(hr, "GetNextPacketSize", done);
     }
+    cout << "[collectSound] Collected: " << received << endl;
     if (hr == OK)
         *totalReceived = received;
 
@@ -56,9 +65,8 @@ Capture::Capture() {
     HRESULT hr = OK;
 
     hr = performOverview();
-    HANDLE_RET_CODE(hr, "initializeExclusiveClient", done);
-
-done:
+    if (FAILED(hr))
+        cout << "[ERROR] performOverview" << endl;
 }
 
 void Capture::getFormat(WAVEFORMATEX **format) {

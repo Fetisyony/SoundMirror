@@ -44,7 +44,7 @@ class Capture {
     IAudioCaptureClient *pCaptureClient = NULL;
     WAVEFORMATEX *format = NULL;
 
-    bool stopCollection = false;
+    bool runCollecting = true;
     bool loopback = true;
 
     UINT32 nFrames;
@@ -52,7 +52,7 @@ class Capture {
     BYTE *captureBuffer;
     UINT32 packetLength = 0;
 
-    UINT64 bytes_in_second;
+    UINT64 bytesInSecond;
 
 public:
     Capture();
@@ -64,7 +64,9 @@ public:
 
     HRESULT initializeExclusiveClient(int secs_in_buffer);
 
-    HRESULT collectSound(double chunkSeconds, BYTE *destBuffer, UINT64 *totalReceived);
+    HRESULT collectSound(double chunkSeconds, BYTE *destBuffer, UINT64 *totalReceived, UINT64 bufferLimit);
+
+    UINT64 getBytesInSecond();
 
     HRESULT startSoundCapture();
 

@@ -4,10 +4,10 @@ int Presenter::start() {
     int hr = OK;
 
     std::thread t1(&Presenter::startRecording, this);
-    // std::thread t2(&Presenter::startStreaming, this);
+    std::thread t2(&Presenter::startStreaming, this);
 
     t1.join();
-    // t2.join();
+    t2.join();
 
     return hr;
 }
@@ -27,10 +27,14 @@ int Presenter::startRecording() {
     cv.notify_one();
     cout << "[recording] Notified the streamer" << endl;
 
+    UINT64 bytesInSecond = capture->getBytesInSecond();
+
+    UINT64 bufferSize = bytesInSecond * secondsToCollect * 2;
+
     while (!done) {
-        BYTE *buffer = new BYTE[100000000];
+        BYTE *buffer = new BYTE[bufferSize];
         UINT64 totalReceived = 0;
-        capture->collectSound(secondsToCollect, buffer, &totalReceived);
+        capture->collectSound(secondsToCollect, buffer, &totalReceived, bufferSize);
         {
             std::lock_guard<std::mutex> lock(mtx);
             dataQueue.push({buffer, totalReceived});
@@ -53,7 +57,7 @@ int Presenter::startStreaming() {
 
         if (done) continue;
     
-        if (processedFormat) {
+        if (!processedFormat) {
             cout << this->format->wBitsPerSample << endl;
             processedFormat = true;
             cout << "[streaming] Processed a format" << endl;

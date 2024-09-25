@@ -64,8 +64,8 @@ int writeWavData(BYTE *data, UINT32 new_data_size, WAVEFORMATEX *format) {
     return OK;
 }
 
-bool is_enough(UINT64 bytes_in_second) {
-    return written_data_size >= bytes_in_second * RECORDING_DURATION_SECONDS;
+bool is_enough(UINT64 bytesInSecond) {
+    return written_data_size >= bytesInSecond * RECORDING_DURATION_SECONDS;
 }
 
 int close_file() {
