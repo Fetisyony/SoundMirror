@@ -2,7 +2,8 @@
 
 #include <Audioclient.h>
 #include <algorithm>
-#include "../errors.h"
+
+#include "../ErrorsConfig.h"
 
 unsigned short swap_endianess(unsigned short value);
 

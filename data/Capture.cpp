@@ -1,8 +1,7 @@
 #include "Capture.h"
-#include "../errors.h"
 
 
-bool is_enough(UINT64 received, UINT64 bytesInSecond, double chunkSeconds) {
+bool isEnough(UINT64 received, UINT64 bytesInSecond, double chunkSeconds) {
     return received >= bytesInSecond * chunkSeconds;
 }
 
@@ -28,14 +27,13 @@ done:
 
 HRESULT Capture::collectSound(double chunkSeconds, BYTE *destBuffer, UINT64 *totalReceived, UINT64 bufferLimit) {
     HRESULT hr = OK;
-    int rc_process = OK;
 
     UINT64 received = 0;
 
     hr = pCaptureClient->GetNextPacketSize(&packetLength);
     HANDLE_RET_CODE(hr, "GetNextPacketSize", done);
 
-    while (runCollecting && !is_enough(received, bytesInSecond, chunkSeconds) && received < bufferLimit) {
+    while (runCollecting && !isEnough(received, bytesInSecond, chunkSeconds) && received < bufferLimit) {
         hr = pCaptureClient->GetBuffer(&captureBuffer, &nFrames, &flags, NULL, NULL);
         HANDLE_RET_CODE(hr, "GetBuffer", done);
 
@@ -45,6 +43,7 @@ HRESULT Capture::collectSound(double chunkSeconds, BYTE *destBuffer, UINT64 *tot
         // max {n: n <= nFrames}: n * format->nBlockAlign <= bufferLimit
         received += nMaxBytes;
         memcpy(destBuffer, captureBuffer, nMaxBytes);
+        destBuffer += nMaxBytes;
 
         // well, we took frames that we can accept, let's just skip ones that left
         hr = pCaptureClient->ReleaseBuffer(nFrames);
@@ -54,7 +53,6 @@ HRESULT Capture::collectSound(double chunkSeconds, BYTE *destBuffer, UINT64 *tot
         HANDLE_RET_CODE(hr, "GetNextPacketSize", done);
     }
     cout << "[collectSound] Collected: " << received << endl;
-    if (hr == OK)
         *totalReceived = received;
 
 done:
@@ -109,12 +107,16 @@ HRESULT Capture::start() {
     
     if (loopback) {
         hr = initializeLoopbackRecorder();
+        HANDLE_RET_CODE(hr, "initializeLoopbackRecorder", done);
 
         hr = initializeSharedClient(SECONDS_IN_SHARED_BUFFER);
+        HANDLE_RET_CODE(hr, "initializeSharedClient", done);
     } else {
         hr = initializeMicrophoneRecorder();
+        HANDLE_RET_CODE(hr, "initializeMicrophoneRecorder", done);
 
         hr = initializeExclusiveClient(SECONDS_IN_SHARED_BUFFER);
+        HANDLE_RET_CODE(hr, "initializeExclusiveClient", done);
     }
     printFormat(format);
 
@@ -188,7 +190,7 @@ HRESULT Capture::initializeExclusiveClient(int secs_in_buffer) {
 
     REFERENCE_TIME hnsBufferDuration = 10 * 1000 * 1000 * secs_in_buffer;  // hecto nanoseconds
     hr = pAudioClient->Initialize(
-            AUDCLNT_SHAREMODE_EXCLUSIVE,
+            AUDCLNT_SHAREMODE_SHARED,
             0,
             hnsBufferDuration,
             0,  // hnsPeriodicity

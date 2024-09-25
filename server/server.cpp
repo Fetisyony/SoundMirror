@@ -64,7 +64,7 @@ int StreamServer::start() {
                             sizeof(clientAddr)
                             );
 
-    cout << "[StreamServer::start] Accepted" << endl;
+    cout << "[StreamServer::start] Accepted, bytes in reply: " << sendBytes << endl;
 
     return rc;
 }
@@ -146,9 +146,9 @@ void StreamServer::showHostinfo() {
 
 // ===================================================================
 
-ServerTCP::ServerTCP(string address, int port) {
+ServerTCP::ServerTCP(int port) : port(port) {
     serverAddr.sin_family = AF_INET;  // IPv4
-    serverAddr.sin_port = htons(PORT);  // Convert to network byte order
+    serverAddr.sin_port = htons(port);  // Convert to network byte order
     serverAddr.sin_addr.s_addr = INADDR_ANY; // Listen on all available interfaces
 
     int rc = init();

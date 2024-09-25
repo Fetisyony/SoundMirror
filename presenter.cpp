@@ -1,4 +1,9 @@
 #include "presenter.h"
+#include <windows.h>
+
+Presenter::~Presenter() {
+    delete waveCreator;
+}
 
 int Presenter::start() {
     int hr = OK;
@@ -6,8 +11,13 @@ int Presenter::start() {
     std::thread t1(&Presenter::startRecording, this);
     std::thread t2(&Presenter::startStreaming, this);
 
+    Sleep(30000);
+    done = true;
+
     t1.join();
     t2.join();
+
+    waveCreator->closeFile();
 
     return hr;
 }
@@ -15,7 +25,7 @@ int Presenter::start() {
 int Presenter::startRecording() {
     int hr = OK;
 
-    double secondsToCollect = 0.5;
+    double secondsToCollect = 0.3;
 
     Capture *capture = new Capture();
     capture->startSoundCapture();
@@ -29,7 +39,7 @@ int Presenter::startRecording() {
 
     UINT64 bytesInSecond = capture->getBytesInSecond();
 
-    UINT64 bufferSize = bytesInSecond * secondsToCollect * 2;
+    UINT64 bufferSize = bytesInSecond * secondsToCollect * 5;
 
     while (!done) {
         BYTE *buffer = new BYTE[bufferSize];
@@ -58,18 +68,20 @@ int Presenter::startStreaming() {
         if (done) continue;
     
         if (!processedFormat) {
-            cout << this->format->wBitsPerSample << endl;
+            waveCreator = new WaveCreator(this->format);
             processedFormat = true;
-            cout << "[streaming] Processed a format" << endl;
+            cout << "[streaming] Processed a format - " << endl;
         }
         while (!dataQueue.empty()) {
             BYTE *data;
             UINT64 totalReceived;
             tie(data, totalReceived) = dataQueue.front();
+            
             dataQueue.pop();
             lock.unlock();
 
             // kinda simulating
+            waveCreator->addSound(data, totalReceived);
             std::cout << "[streaming] Received bytes number: " << totalReceived << std::endl;
 
             delete data;

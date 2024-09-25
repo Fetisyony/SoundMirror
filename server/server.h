@@ -7,7 +7,7 @@
 #include "../mathutils/converters.h"
 
 #include "server_errors.h"
-#include "../errors.h"
+#include "../ErrorsConfig.h"
 
 using namespace std;
 
@@ -42,8 +42,10 @@ protected:
     sockaddr_in serverAddr;
     sockaddr_in clientAddr;
 
+    int port;
+
 public:
-    ServerTCP(string address, int port);
+    ServerTCP(int port);
     ~ServerTCP();
 
     virtual int start();

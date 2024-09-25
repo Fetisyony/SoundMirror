@@ -17,14 +17,14 @@
 #include <propkey.h>
 #include <propvarutil.h>
 
-#include "../errors.h"
+#include "../ErrorsConfig.h"
 #include <windows.h>
 
 using namespace std;
 
 typedef unsigned char BYTE;
 
-#define SECONDS_IN_SHARED_BUFFER 0.5
+#define SECONDS_IN_SHARED_BUFFER 10
 
 #define HANDLE_RET_CODE(hr, message, label) if (FAILED(hr)) { \
     cout << "Error: " << message << " - failed (" << (long)hr << ")" << endl; \

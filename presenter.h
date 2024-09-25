@@ -8,7 +8,8 @@
 #include <chrono>
 
 #include "data/Capture.h"
-#include "errors.h"
+#include "ErrorsConfig.h"
+#include "sound_files/WaveFile.h"
 
 class Presenter {
     public:
@@ -17,6 +18,8 @@ class Presenter {
     std::condition_variable cv;
     bool done = false;
 
+    WaveCreator *waveCreator = NULL;
+
     WAVEFORMATEX *format;
     bool processedFormat = false;
 
@@ -24,6 +27,8 @@ class Presenter {
     bool stopThreads = false;
 
     public:
+        ~Presenter();
+
         int startRecording();
         int startStreaming();
 
