@@ -10,8 +10,11 @@
 using namespace std;
 
 #define OK 0
-#define DISCONNECTED 1
+
+#define DISCONNECTED 430
 
 #define ERROR_FILE_ACCESS 130
+
+#define ERROR_START_CAPTURE 520
 
 void showWasapiErrorMessage(HRESULT er);

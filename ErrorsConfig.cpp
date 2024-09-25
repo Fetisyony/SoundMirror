@@ -53,6 +53,22 @@ void showWasapiErrorMessage(HRESULT er) {
         case (E_OUTOFMEMORY):
             cout << "E_OUTOFMEMORY" << endl;
             break;
+        case (E_NOINTERFACE):
+
+            cout << "E_NOINTERFACE" << endl;
+            break;
+        case (E_NOTIMPL):
+            cout << "E_NOTIMPL" << endl;
+            break;
+        case (E_FAIL):
+            cout << "E_FAIL" << endl;
+            break;
+        case (E_ACCESSDENIED):
+            cout << "E_ACCESSDENIED" << endl;
+            break;
+        case (AUDCLNT_E_RESOURCES_INVALIDATED):
+            cout << "AUDCLNT_E_RESOURCES_INVALIDATED" << endl;
+            break;
         default:
             cout << "Unknown error" << endl;
             break;

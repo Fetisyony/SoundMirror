@@ -2,7 +2,9 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <assert.h>
 #include <windows.h>
+#include <stdexcept>
 
 #include <mmreg.h>
 
@@ -12,7 +14,7 @@ using std::cout;
 using std::endl;
 
 class WaveCreator {
-    const char *filename = "test.wav";
+    const char *filename = NULL;
 
     FILE *file = NULL;
     UINT64 written_data_size = 0;
@@ -23,7 +25,7 @@ class WaveCreator {
     int HEADER_SIZE = 4 + 4 + 4 + 4 + 4 + cksize + 4 + 4;  // 68
 
 public:
-    WaveCreator(WAVEFORMATEX *&format);
+    WaveCreator(const char *filename, WAVEFORMATEX *&format);
 
     int initWaveFile();
 
@@ -32,5 +34,5 @@ public:
 
     bool isEnough(UINT64 bytesInSecond, double secondsNeed);
 
-    int closeFile();
+    void closeFile();
 };

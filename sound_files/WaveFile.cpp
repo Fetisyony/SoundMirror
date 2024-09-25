@@ -1,15 +1,14 @@
 #include "WaveFile.h"
-#include <assert.h>
 
 
-WaveCreator::WaveCreator(WAVEFORMATEX *&format) {
+WaveCreator::WaveCreator(const char *filename, WAVEFORMATEX *&format) {
+    this->filename = filename;
     this->format = format;
 
     int rc = initWaveFile();
 
     if (rc != OK) {
-        // TODO: throw an exception?
-        cout << "Error while initializing wave" << endl;
+        throw std::runtime_error("Unable to initialize wave file!"); 
     }
 }
 
@@ -17,7 +16,7 @@ int WaveCreator::initWaveFile() {
     file = fopen(filename, "wb");
     if (file == NULL) {
         cout << "Error while opening file" << endl;
-        return ERROR;
+        return ERROR_FILE_ACCESS;
     }
 
     WAVEFORMATEXTENSIBLE *pWaveFormatExtensible;
@@ -73,8 +72,7 @@ bool WaveCreator::isEnough(UINT64 bytesInSecond, double secondsNeed) {
     return written_data_size >= bytesInSecond * secondsNeed;
 }
 
-int WaveCreator::closeFile() {
+void WaveCreator::closeFile() {
     if (file)
         fclose(file);
-    return OK;
 }

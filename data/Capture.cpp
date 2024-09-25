@@ -9,10 +9,19 @@ UINT64 Capture::getBytesInSecond() {
     return bytesInSecond;
 }
 
+int Capture::startSoundCaptureWrapper() {
+    HRESULT hr = startSoundCapture();
+
+    if (FAILED(hr))
+        return ERROR_START_CAPTURE;
+    return OK;
+}
+
 HRESULT Capture::startSoundCapture() {
     HRESULT hr = OK;
 
     hr = start();
+    HANDLE_RET_CODE(hr, "start", done);
 
     hr = pAudioClient->GetService(IID_IAudioCaptureClient, (void**)&pCaptureClient);
     HANDLE_RET_CODE(hr, "GetService", done);
@@ -22,6 +31,7 @@ HRESULT Capture::startSoundCapture() {
     bytesInSecond = format->nSamplesPerSec * (format->wBitsPerSample / 8) * format->nChannels;
 
 done:
+    showWasapiErrorMessage(hr);
     return hr;
 }
 
@@ -53,6 +63,7 @@ HRESULT Capture::collectSound(double chunkSeconds, BYTE *destBuffer, UINT64 *tot
         HANDLE_RET_CODE(hr, "GetNextPacketSize", done);
     }
     cout << "[collectSound] Collected: " << received << endl;
+    if (SUCCEEDED(hr))
         *totalReceived = received;
 
 done:
@@ -63,8 +74,9 @@ Capture::Capture() {
     HRESULT hr = OK;
 
     hr = performOverview();
-    if (FAILED(hr))
-        cout << "[ERROR] performOverview" << endl;
+    if (FAILED(hr)) {
+        throw std::runtime_error("Unable to initialize Capture!"); 
+    }
 }
 
 void Capture::getFormat(WAVEFORMATEX **format) {
@@ -121,8 +133,6 @@ HRESULT Capture::start() {
     printFormat(format);
 
 done:
-    showWasapiErrorMessage(hr);
-
     return hr;
 }
 
@@ -142,8 +152,10 @@ HRESULT Capture::initializeMicrophoneRecorder() {
     HANDLE_RET_CODE(hr, "GetDefaultAudioEndpoint", done);
 
     hr = activateClient();
+    HANDLE_RET_CODE(hr, "activateClient", done);
 
     hr = initializeFormat();
+    HANDLE_RET_CODE(hr, "initializeFormat", done);
 
 done:
     return hr;

@@ -68,6 +68,9 @@ public:
 
     UINT64 getBytesInSecond();
 
+    // Wraps startSoundCapture just to present error in a normal way (not HRESULT)
+    int startSoundCaptureWrapper();
+
     HRESULT startSoundCapture();
 
     HRESULT initializeLoopbackRecorder();
