@@ -1,12 +1,13 @@
 #pragma once
 
 #include <iostream>
-
-#include <thread>
-#include <windows.h>
 #include <string>
 
+#include <windows.h>
+#include "../mathutils/converters.h"
+
 #include "server_errors.h"
+#include "../errors.h"
 
 using namespace std;
 
@@ -14,45 +15,66 @@ using namespace std;
 
 typedef unsigned char BYTE;
 
-extern SOCKET listenSocket;
-extern UINT64 passed;
 
-
-// implements server socket for udp for one client
 class ServerUDP {
-    SOCKET listenSocket;
-    sockaddr_in clientAddr;
+protected:
+    SOCKET serverSocket;
+    sockaddr_in serverAddr, clientAddr;
+    string serverAddressStr;
+    int port;
 public:
     ServerUDP(string address, int port);
-    ~ServerUDP();
+    virtual ~ServerUDP();
 
-    int start();
+    virtual int init() = 0;
 
-    int stop();
+    virtual int start() = 0;
+    virtual int stop() = 0;
 
-    void show_hostinfo();
-
-    int send_to_client(BYTE *message, UINT32 size);
+    virtual void showHostinfo() = 0;
+    virtual int send_to_client(BYTE *message, UINT32 size) = 0;
 };
 
 class ServerTCP {
+protected:
     SOCKET listenSocket;
     SOCKET clientSocket;
+    sockaddr_in serverAddr;
     sockaddr_in clientAddr;
 
+public:
     ServerTCP(string address, int port);
     ~ServerTCP();
 
-    int start();
+    virtual int start();
 
-    int stop();
+    virtual int init();
 
-    void show_hostinfo();
+    virtual int stop();
 
-    int send_to_client(BYTE *message, UINT32 size);
-    
-    int send_short(unsigned short input_little_end);
+    virtual void showHostinfo();
+
+    virtual int send_to_client(BYTE *message, UINT32 size);
 };
 
 
+class StreamServer : public ServerUDP {
+public:
+    StreamServer(string address, int port);
+    ~StreamServer();
+
+    int init() override;
+
+    int start() override;
+    int stop() override;
+
+    void showHostinfo() override;
+    int send_to_client(BYTE *message, UINT32 size) override;
+
+    int announce_format(WAVEFORMATEX *format);
+
+    int send_short(unsigned short input_little_end);
+
+    int convert_endianess_and_send(BYTE* pData, UINT32 nFrames, WAVEFORMATEX *format);
+};
 

@@ -1,5 +1,5 @@
 #include "Capture.h"
-#include "errors.h"
+#include "../errors.h"
 
 
 bool is_enough(UINT64 received, UINT64 bytes_in_second, double chunkSeconds) {
@@ -8,6 +8,8 @@ bool is_enough(UINT64 received, UINT64 bytes_in_second, double chunkSeconds) {
 
 HRESULT Capture::startSoundCapture() {
     HRESULT hr = OK;
+
+    hr = start();
 
     hr = pAudioClient->GetService(IID_IAudioCaptureClient, (void**)&pCaptureClient);
     HANDLE_RET_CODE(hr, "GetService", done);
@@ -20,7 +22,7 @@ done:
     return hr;
 }
 
-HRESULT Capture::collectSound(double chunkSeconds, BYTE *destBuffer) {
+HRESULT Capture::collectSound(double chunkSeconds, BYTE *destBuffer, UINT64 *totalReceived) {
     HRESULT hr = OK;
     int rc_process = OK;
 
@@ -29,7 +31,7 @@ HRESULT Capture::collectSound(double chunkSeconds, BYTE *destBuffer) {
     hr = pCaptureClient->GetNextPacketSize(&packetLength);
     HANDLE_RET_CODE(hr, "GetNextPacketSize", done);
 
-    while (stopThreads && packetLength != 0 && !is_enough(received, bytes_in_second, chunkSeconds)) {
+    while (!stopCollection && packetLength != 0 && !is_enough(received, bytes_in_second, chunkSeconds)) {
         hr = pCaptureClient->GetBuffer(&captureBuffer, &nFrames, &flags, NULL, NULL);
         HANDLE_RET_CODE(hr, "GetBuffer", done);
 
@@ -43,6 +45,8 @@ HRESULT Capture::collectSound(double chunkSeconds, BYTE *destBuffer) {
         hr = pCaptureClient->GetNextPacketSize(&packetLength);
         HANDLE_RET_CODE(hr, "GetNextPacketSize", done);
     }
+    if (hr == OK)
+        *totalReceived = received;
 
 done:
     return hr;
@@ -51,17 +55,10 @@ done:
 Capture::Capture() {
     HRESULT hr = OK;
 
-    hr = initializeMicrophoneRecorder();
-    HANDLE_RET_CODE(hr, "initializeMicrophoneRecorder", done);
-
-    print_format(format);
-
-    hr = initializeExclusiveClient(SECONDS_IN_SHARED_BUFFER);
-
-    hr = initializeMicrophoneRecorder();
+    hr = performOverview();
+    HANDLE_RET_CODE(hr, "initializeExclusiveClient", done);
 
 done:
-    show_error_init_client(hr);
 }
 
 void Capture::getFormat(WAVEFORMATEX **format) {
@@ -101,21 +98,25 @@ done:
 
 HRESULT Capture::start() {
     HRESULT hr = OK;
+    
+    if (loopback) {
+        hr = initializeLoopbackRecorder();
 
-    hr = performOverview();
-    HANDLE_RET_CODE(hr, "initializeExclusiveClient", done);
+        hr = initializeSharedClient(SECONDS_IN_SHARED_BUFFER);
+    } else {
+        hr = initializeMicrophoneRecorder();
 
-    hr = initializeLoopbackRecorder();
-    HANDLE_RET_CODE(hr, "initializeLoopbackRecorder", done);
-
-    hr = initializeSharedClient(SECONDS_IN_SHARED_BUFFER);
-    HANDLE_RET_CODE(hr, "initializeSharedClient", done);
+        hr = initializeExclusiveClient(SECONDS_IN_SHARED_BUFFER);
+    }
+    printFormat(format);
 
 done:
+    showWasapiErrorMessage(hr);
+
     return hr;
 }
 
-void Capture::print_format(WAVEFORMATEX *format) {
+void Capture::printFormat(WAVEFORMATEX *format) {
     printf("Frame size     : %d\n" , format->nBlockAlign);
     printf("Channels       : %d\n" , format->nChannels);
     printf("Bits per second: %d\n" , format->wBitsPerSample);
@@ -165,8 +166,10 @@ HRESULT Capture::initializeLoopbackRecorder() {
     HANDLE_RET_CODE(hr, "GetDefaultAudioEndpoint", done);
 
     hr = activateClient();
+    HANDLE_RET_CODE(hr, "GetDefaultAudioEndpoint", done);
 
     hr = initializeFormat();
+    HANDLE_RET_CODE(hr, "GetDefaultAudioEndpoint", done);
 
 done:
     return hr;
@@ -223,5 +226,5 @@ Capture::~Capture() {
 
     CoUninitialize();
 
-    cout << "Closed capturer with error code: " << hr << endl; 
+    cout << "Closed capturer with error code: " << hr << endl;
 }

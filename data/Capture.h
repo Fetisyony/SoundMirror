@@ -1,11 +1,11 @@
 #pragma once
 
+#include <winsock2.h>
+
 #include <iostream>
 #include <string>
 #include <queue>
 
-#include <winsock2.h>
-#include <windows.h>
 #include <Audioclient.h>
 #include <mmdeviceapi.h>
 #include <mmreg.h>
@@ -17,7 +17,8 @@
 #include <propkey.h>
 #include <propvarutil.h>
 
-#include "errors.h"
+#include "../errors.h"
+#include <windows.h>
 
 using namespace std;
 
@@ -43,7 +44,8 @@ class Capture {
     IAudioCaptureClient *pCaptureClient = NULL;
     WAVEFORMATEX *format = NULL;
 
-    bool stopThreads = false;
+    bool stopCollection = false;
+    bool loopback = true;
 
     UINT32 nFrames;
     DWORD flags;
@@ -62,7 +64,7 @@ public:
 
     HRESULT initializeExclusiveClient(int secs_in_buffer);
 
-    HRESULT collectSound(double chunkSeconds, BYTE *destBuffer);
+    HRESULT collectSound(double chunkSeconds, BYTE *destBuffer, UINT64 *totalReceived);
 
     HRESULT startSoundCapture();
 
@@ -70,17 +72,17 @@ public:
 
     HRESULT initializeMicrophoneRecorder();
 
-    void print_format(WAVEFORMATEX *format);
+    void printFormat(WAVEFORMATEX *format);
 
     HRESULT performOverview();
 
     /* Simply activates current audioclient.
     Encapsulates scary call. */
-    HRESULT Capture::activateClient();
+    HRESULT activateClient();
 
     /* Simply gets format from current audioclient.
     Encapsulates scary call. */
-    HRESULT Capture::initializeFormat();
+    HRESULT initializeFormat();
 
     HRESULT start();
 };

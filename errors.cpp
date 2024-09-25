@@ -1,10 +1,11 @@
-#pragma once
-
 #include "errors.h"
 
 
-void show_error_init_client(HRESULT er) {
+void showWasapiErrorMessage(HRESULT er) {
     switch (er) {
+        case OK:
+            cout << "OK" << endl;
+            break;
         case (AUDCLNT_E_ALREADY_INITIALIZED):
             cout << "AUDCLNT_E_ALREADY_INITIALIZED" << endl;
             break;

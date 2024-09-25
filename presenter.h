@@ -12,7 +12,7 @@
 
 class Presenter {
     public:
-    std::queue<BYTE *> dataQueue;
+    std::queue<pair<BYTE *, UINT64>> dataQueue;
     std::mutex mtx;
     std::condition_variable cv;
     bool done = false;
@@ -28,6 +28,4 @@ class Presenter {
         int startStreaming();
 
         int start();
-
-        Presenter();
 };

@@ -6,7 +6,7 @@ int main() {
 
     Presenter *presenter = new Presenter();
     presenter->start();
-    free(presenter);
+    delete presenter;
 
     return hr;
 }
