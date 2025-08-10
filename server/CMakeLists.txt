@@ -17,8 +17,8 @@ set(
         src/mathutils/converters.cpp
         src/mathutils/converters.hpp
 
-        src/audiostreamingservice/wavefile/WaveCreator.cpp
-        src/audiostreamingservice/wavefile/WaveCreator.hpp
+        src/audiostreamingservice/wavefileconsumerservice/WaveConsumerService.cpp
+        src/audiostreamingservice/wavefileconsumerservice/WaveConsumerService.hpp
 
         src/ErrorsConfig.cpp
         src/ErrorCodes.hpp
@@ -52,12 +52,12 @@ set(
         src/network/socketserver/ISocketServer.hpp
         src/audiostreamingservice/networkstreamingservice/StreamingService.hpp
         src/audiostreamingservice/consumer/IConsumerService.hpp
-        src/audiostreamingservice/wavefile/WaveConstants.hpp
-        src/timeservice/TimeSyncService.cpp
-        src/timeservice/TimeSyncService.hpp
+        src/audiostreamingservice/wavefileconsumerservice/WaveConstants.hpp
+        src/timesyncservice/TimeSyncService.cpp
+        src/timesyncservice/TimeSyncService.hpp
         src/config/ConfigManager.cpp
         src/config/ConfigManager.hpp
-        src/timeservice/SyncException.hpp
+        src/timesyncservice/SyncException.hpp
         src/exceptions/BaseException.hpp
         src/network/networkanalyzer/NetworkAnalyzer.cpp
         src/network/networkanalyzer/NetworkAnalyzer.hpp

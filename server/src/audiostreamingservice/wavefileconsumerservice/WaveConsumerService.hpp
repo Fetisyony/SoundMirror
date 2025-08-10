@@ -13,9 +13,9 @@
 using std::cout;
 using std::endl;
 
-class WaveCreator final : public IConsumerService {
+class WaveConsumerService final : public IConsumerService {
 public:
-    explicit WaveCreator(const char *filename = WaveConstants::DEFAULT_FILENAME);
+    explicit WaveConsumerService(const char *filename = WaveConstants::DEFAULT_FILENAME);
 
     errcode_t initialize(WAVEFORMATEX *format) override;
 

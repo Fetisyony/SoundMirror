@@ -1,11 +1,11 @@
-#include "WaveCreator.hpp"
+#include "WaveConsumerService.hpp"
 
 #include <cassert>
 
 
-WaveCreator::WaveCreator(const char *filename) : filename(filename) {}
+WaveConsumerService::WaveConsumerService(const char *filename) : filename(filename) {}
 
-errcode_t WaveCreator::initialize(WAVEFORMATEX *format) {
+errcode_t WaveConsumerService::initialize(WAVEFORMATEX *format) {
     this->format = format;
 
     file = fopen(filename, "wb");
@@ -37,7 +37,7 @@ errcode_t WaveCreator::initialize(WAVEFORMATEX *format) {
 }
 
 // Adds new data in bytes to the initialized wave file
-errcode_t WaveCreator::consumeNewData(BYTE *data, UINT32 bytesCount) {
+errcode_t WaveConsumerService::consumeNewData(BYTE *data, UINT32 bytesCount) {
     if (!file) {
         throw std::runtime_error("Unable to consumeNewData to uninitialized wave file!");
     }
@@ -61,15 +61,15 @@ errcode_t WaveCreator::consumeNewData(BYTE *data, UINT32 bytesCount) {
     return OK;
 }
 
-bool WaveCreator::isEnough(UINT64 bytesInSecond, double secondsNeed) {
+bool WaveConsumerService::isEnough(UINT64 bytesInSecond, double secondsNeed) {
     return totalSizeWritten >= bytesInSecond * secondsNeed;
 }
 
-void WaveCreator::destroy() {
+void WaveConsumerService::destroy() {
     closeFile();
 }
 
-void WaveCreator::closeFile() {
+void WaveConsumerService::closeFile() {
     if (file)
         fclose(file);
 }

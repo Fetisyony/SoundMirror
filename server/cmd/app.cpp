@@ -4,11 +4,11 @@
 #include "audiostreamingservice/audiobufferpool/AudioBufferPool.hpp"
 #include "audiostreamingservice/networkstreamingservice/StreamingService.hpp"
 #include "audiostreamingservice/consumer/Consumer.hpp"
-#include "audiostreamingservice/wavefile/WaveCreator.hpp"
+#include "audiostreamingservice/wavefileconsumerservice/WaveConsumerService.hpp"
 #include "config/ConfigManager.hpp"
 #include "constants/QueueSizes.hpp"
-#include "timeservice/SyncException.hpp"
-#include "timeservice/TimeSyncService.hpp"
+#include "timesyncservice/SyncException.hpp"
+#include "timesyncservice/TimeSyncService.hpp"
 
 void launch() {
     const AppConfig &appConfig = ConfigManager::getInstance().getConfig();

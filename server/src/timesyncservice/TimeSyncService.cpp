@@ -6,7 +6,7 @@
 #include <windows.h>
 
 #include "network/socketserver/tcpsocketserver/TCPSocketServer.hpp"
-#include "timeservice/SyncException.hpp"
+#include "timesyncservice/SyncException.hpp"
 
 TimeSyncService::TimeSyncService(int port) : _port(port) {
     _server = std::make_shared<TCPSocketServer>();
