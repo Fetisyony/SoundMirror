@@ -1,4 +1,6 @@
 #pragma once
+#include <vector>
+
 #include "ErrorCodes.hpp"
 #include "ISocketServer.hpp"
 
@@ -16,11 +18,17 @@ public:
 
     errcode_t sendMessage(BYTE *message, UINT32 size) override;
 
+    errcode_t recvAll(void *data, int size) override;
+    errcode_t recvMessage(BYTE *buffer, UINT32 bufferSize, UINT32 &bytes_received) override;
+    errcode_t recvMessage(std::vector<BYTE> &message) override;
+
 private:
     SOCKET _listenSocket{};
     SOCKET _clientSocket{};
     sockaddr_in _serverAddr{};
     sockaddr_in _clientAddr{};
+
+    WSADATA wsaData = {};
 
     int _port{};
 };

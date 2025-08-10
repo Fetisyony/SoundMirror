@@ -1,7 +1,6 @@
 #pragma once
 #include <atomic>
 #include <memory>
-#include <memory>
 #include <thread>
 
 #include "AudioBufferPool.hpp"
@@ -12,15 +11,19 @@
 class Consumer {
 public:
     Consumer(
-        const std::shared_ptr<IConsumerService> &consumerService, QueueConstants::LockfreeAudioQueueType &audioQueue,
-        const std::shared_ptr<AudioBufferPool> &bufferPool, std::atomic<bool> &keepRunning
+        const std::shared_ptr<IConsumerService> &consumerService,
+        QueueConstants::LockfreeAudioQueueType &audioQueue,
+        const std::shared_ptr<AudioBufferPool> &bufferPool,
+        std::atomic<bool> &keepRunning
     );
-
-    void start();
 
     void initialize(WAVEFORMATEX *format);
 
+    void start();
+
     void stop();
+
+    void join();
 
     ~Consumer();
 
@@ -37,6 +40,4 @@ private:
     void runConsuming();
 
     void processChunk(AudioChunk *chunk);
-
-    void close();
 };

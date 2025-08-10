@@ -7,9 +7,18 @@
     <string name="disconnect_action">Disconnect</string>
     <string name="connect_action">Connect</string>
     <string name="invalid_ip_address_format_error">Invalid IP address</string>
+    <string name="unknown_background_error">Unknown error occurred in the background service, try restarting the app</string>
     <string name="notification_title">Notification</string>
     <string name="audio_streaming_notification_channel_name">Audio Streaming</string>
     <string name="connection_screen_title">Sound Mirror</string>
-    <string name="dialog_answer_ok">Ok</string>
+
+    <string name="error_connection_failed">Failed to connect to the streaming server.</string>
+    <string name="error_connection_timeout">Connection timed out. Server might be unavailable.</string>
+    <string name="error_network_io">Network communication error during streaming.</string>
+    <string name="error_unsupported_audio_format">The audio format from the server is not supported.</string>
+    <string name="error_audio_setup_failed">Failed to set up audio playback. Please check device settings.</string>
+    <string name="error_service_unknown">An unexpected service error occurred.</string>
+
+    <string name="dialog_answer_ok">OK</string>
     <string name="why_notification_required_explanation">We need notification permission to alert you when we go live</string>
 </resources>

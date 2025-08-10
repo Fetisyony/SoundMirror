@@ -1,5 +1,8 @@
 #include "StreamingService.hpp"
 
+#include <chrono>
+#include <cstring>
+
 #include "mathutils/converters.hpp"
 #include "socketserver/TCPSocketServer.hpp"
 
@@ -21,11 +24,28 @@ errcode_t StreamingService::initialize(WAVEFORMATEX *format) {
 }
 
 errcode_t StreamingService::consumeNewData(BYTE *data, UINT32 bytesCount) {
+    errcode_t rc = OK;
+
     // Convert the audio data from little-endian to big-endian
     if (_convertEndianess)
         swapSoundEndianess(data, bytesCount / _format->nBlockAlign, _format);
 
-    return _server->sendMessage(data, bytesCount);
+    BYTE header[4];
+    std::memcpy(header, &bytesCount, sizeof(header));
+    if (rc == OK)
+        rc = _server->sendMessage(header, sizeof(header));
+
+    const auto now = std::chrono::system_clock::now();
+    const int64_t millis = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+
+    BYTE timestamp[8];
+    std::memcpy(timestamp, &millis, sizeof(timestamp));
+    if (rc == OK)
+        rc = _server->sendMessage(timestamp, sizeof(timestamp));
+    if (rc == OK)
+        rc = _server->sendMessage(data, bytesCount);
+
+    return rc;
 }
 
 void StreamingService::destroy() {

@@ -9,13 +9,19 @@
 
 class Producer {
 public:
-    Producer(QueueConstants::LockfreeAudioQueueType &audioQueue, const std::shared_ptr<AudioBufferPool> &bufferPool, std::atomic<bool> &keepRunning);
+    Producer(
+        QueueConstants::LockfreeAudioQueueType &audioQueue,
+        const std::shared_ptr<AudioBufferPool> &bufferPool,
+        std::atomic<bool> &keepRunning
+    );
 
     WAVEFORMATEX *initialize();
 
     void start();
 
     void stop();
+
+    void join();
 
     ~Producer();
 
@@ -32,9 +38,8 @@ private:
     std::atomic<bool> isInitialized;
     std::thread workerThread;
 
-    void configureThread();
-
-    void resetThreadSettings();
-
     void runProduction();
+
+    void configureThread();
+    void resetThreadConfigurations();
 };

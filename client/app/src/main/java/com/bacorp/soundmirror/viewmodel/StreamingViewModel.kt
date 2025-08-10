@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.bacorp.soundmirror.R
 import com.bacorp.soundmirror.data.NetworkHelper
 import com.bacorp.soundmirror.data.SettingsRepository
-import com.bacorp.soundmirror.service.StreamingService
+import com.bacorp.soundmirror.streamingservice.StreamingService
 import com.bacorp.soundmirror.state.UiState
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -40,7 +40,20 @@ class StreamingViewModel(
         _uiState.update { it.copy(ipAddress = newIp, errorMessageCode = null) }
     }
 
-    fun onConnectClicked() {
+    fun toggleService() {
+        if (_uiState.value.isStreaming) {
+            stopService()
+        } else {
+            startService()
+        }
+    }
+
+    fun handleServiceError(errorMessageCode: Int) {
+        _uiState.update { it.copy(errorMessageCode = errorMessageCode) }
+        stopService()
+    }
+
+    fun startService() {
         val currentIp = uiState.value.ipAddress.trim()
         if (!settingsRepo.isValidIpAddress(currentIp)) {
             _uiState.update { it.copy(errorMessageCode = R.string.invalid_ip_address_format_error) }
@@ -51,21 +64,21 @@ class StreamingViewModel(
             settingsRepo.saveIpAddress(currentIp)
         }
 
-        if (_uiState.value.isStreaming) {
-            stopService()
-        } else {
-            startService(currentIp)
-        }
-        _uiState.update { it.copy(isStreaming = !_uiState.value.isStreaming) }
+        runService(currentIp)
     }
 
-    private fun startService(ip: String) {
+    fun onConnectClicked() {
+        toggleService()
+    }
+
+    private fun runService(ip: String) {
         val context = app.applicationContext
         val startIntent = Intent(context, StreamingService::class.java).apply {
             action = StreamingService.ACTION_START
             putExtra(StreamingService.EXTRA_IP, ip)
         }
         context.startForegroundService(startIntent)
+        _uiState.update { it.copy(isStreaming = true) }
     }
 
     private fun stopService() {
@@ -74,9 +87,19 @@ class StreamingViewModel(
             action = StreamingService.ACTION_STOP
         }
         context.startService(stopIntent)
+        _uiState.update { it.copy(isStreaming = false) }
     }
 
     fun clearError() {
         _uiState.update { it.copy(errorMessageCode = null) }
+    }
+
+    fun updateRunningStatus(streamingRunning: Boolean) {
+        if (streamingRunning && !_uiState.value.isStreaming) {
+            startService()
+        }
+        if (!streamingRunning && _uiState.value.isStreaming) {
+            stopService()
+        }
     }
 }

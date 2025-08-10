@@ -15,7 +15,6 @@ typedef unsigned char BYTE;
 class StreamingService final : public IConsumerService {
 public:
     explicit StreamingService(int port, bool convertEndianess = false);
-    ~StreamingService() override;
 
     errcode_t initialize(WAVEFORMATEX *format) override;
 
@@ -23,6 +22,7 @@ public:
 
     void destroy() override;
 
+    ~StreamingService() override;
 private:
     std::shared_ptr<ISocketServer> _server{};
     int _port;

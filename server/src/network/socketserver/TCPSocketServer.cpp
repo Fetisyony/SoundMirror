@@ -1,10 +1,14 @@
+#include <winsock2.h>
 #include "TCPSocketServer.hpp"
-
+#include <iphlpapi.h>
 #include <network/server_errors.hpp>
 
-TCPSocketServer::~TCPSocketServer() {
-    stop();
-}
+#include <iostream>
+#include <string>
+#include <vector>
+#include <ws2tcpip.h>
+
+#include "../networkanalyzer/NetworkAnalyzer.hpp"
 
 errcode_t TCPSocketServer::init(int port) {
     errcode_t rc = OK;
@@ -15,7 +19,6 @@ errcode_t TCPSocketServer::init(int port) {
     _serverAddr.sin_port = htons(_port); // Convert to network byte order
     _serverAddr.sin_addr.s_addr = INADDR_ANY; // Listen on all available interfaces
 
-    WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
         return ERROR_WSAFAILED;
 
@@ -62,12 +65,13 @@ errcode_t TCPSocketServer::stop() {
 }
 
 void TCPSocketServer::showHostInfo() {
-    char hostname[1024];
-    gethostname(hostname, 1024);
-    hostent *host = gethostbyname(hostname);
-    char *ip = inet_ntoa(*reinterpret_cast<struct in_addr *>(host->h_addr_list[0]));
     printf("Server listening on port %d\n", _port);
-    printf("Host IP: %s\n", ip);
+    const std::string ip = NetworkAnalyzer::getLocalLanIpAddress();
+    if (!ip.empty()) {
+        printf("Host IP (LAN): %s\n", ip.c_str());
+    } else {
+        printf("Could not determine local LAN IP address. Server listening on port %d\n", _port);
+    }
 }
 
 errcode_t TCPSocketServer::sendMessage(BYTE *message, UINT32 size) {
@@ -77,4 +81,66 @@ errcode_t TCPSocketServer::sendMessage(BYTE *message, UINT32 size) {
         return DISCONNECTED;
     }
     return OK;
+}
+
+errcode_t TCPSocketServer::recvAll(void *data, int size) {
+    char *buffer = static_cast<char *>(data);
+    int total_bytes_received = 0;
+    while (total_bytes_received < size) {
+        int bytes_received = recv(_clientSocket, buffer + total_bytes_received, size - total_bytes_received, 0);
+        if (bytes_received == -1) {
+            std::cerr << "Error during recvAll" << std::endl;
+            return DISCONNECTED;
+        }
+        if (bytes_received == 0) {
+            std::cout << "Client disconnected during recvAll." << std::endl;
+            return DISCONNECTED;
+        }
+        total_bytes_received += bytes_received;
+    }
+    return OK;
+}
+
+errcode_t TCPSocketServer::recvMessage(std::vector<BYTE> &message) {
+    UINT32 network_size = 0;
+    if (recvAll(&network_size, sizeof(network_size)) != OK) {
+        return DISCONNECTED;
+    }
+
+    UINT32 size = ntohl(network_size);
+
+    constexpr UINT32 MAX_MSG_SIZE = 10 * 1024 * 1024;
+    if (size > MAX_MSG_SIZE) {
+        std::cerr << "Error: Message size " << size << " exceeds limit." << std::endl;
+        return DISCONNECTED;
+    }
+
+    message.resize(size);
+    if (recvAll(message.data(), size) != OK) {
+        return DISCONNECTED;
+    }
+
+    return OK;
+}
+
+errcode_t TCPSocketServer::recvMessage(BYTE *buffer, UINT32 bufferSize, UINT32 &bytes_received) {
+    int bytes = recv(_clientSocket, reinterpret_cast<char *>(buffer), bufferSize, 0);
+
+    if (bytes > 0) {
+        bytes_received = bytes;
+        return OK;
+    }
+    if (bytes == 0) {
+        std::cout << "Client disconnected gracefully." << std::endl;
+        bytes_received = 0;
+        return DISCONNECTED;
+    }
+
+    std::cout << "recv failed with error." << std::endl;
+    bytes_received = 0;
+    return DISCONNECTED;
+}
+
+TCPSocketServer::~TCPSocketServer() {
+    stop();
 }

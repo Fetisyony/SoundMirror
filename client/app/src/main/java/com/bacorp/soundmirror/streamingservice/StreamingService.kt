@@ -1,4 +1,4 @@
-package com.bacorp.soundmirror.service
+package com.bacorp.soundmirror.streamingservice
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -10,6 +10,7 @@ import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.bacorp.soundmirror.R
 import kotlinx.coroutines.CoroutineScope
@@ -28,6 +29,19 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import com.bacorp.soundmirror.BuildConfig
 import com.bacorp.soundmirror.MainActivity
+import com.bacorp.soundmirror.streamingservice.ServiceConstants
+import com.bacorp.soundmirror.streamingservice.StreamingConstants.HEADER_SIZE
+import com.bacorp.soundmirror.streamingservice.StreamingConstants.MESSAGE_HEADER_SIZE
+import com.bacorp.soundmirror.streamingservice.StreamingConstants.NETWORK_BUFFER_SIZE
+import com.bacorp.soundmirror.streamingservice.StreamingConstants.PORT_STREAMING
+import com.bacorp.soundmirror.streamingservice.StreamingConstants.PORT_SYNC
+import com.bacorp.soundmirror.streamingservice.StreamingConstants.TIMEOUT_MILLIS
+import com.bacorp.soundmirror.streamingservice.StreamingConstants.TIMESTAMP_SIZE
+import com.bacorp.soundmirror.streamingservice.timeservice.TimeService
+import java.io.IOException
+import java.net.InetSocketAddress
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 class StreamingService : Service() {
     companion object {
@@ -38,10 +52,6 @@ class StreamingService : Service() {
         val ACTION_START = "${PKG}.${SERVICE_NAME}.ACTION_START"
         val ACTION_STOP = "${PKG}.${SERVICE_NAME}.ACTION_STOP"
         val EXTRA_IP = "${PKG}.${SERVICE_NAME}.EXTRA_IP"
-
-        private const val PORT = 20000
-        private const val HEADER_SIZE = 6
-        private const val NETWORK_BUFFER_SIZE = 4096
 
         private const val NOTIFICATION_CHANNEL_ID = "streaming_channel"
         private val NOTIFICATION_CHANNEL_NAME_CODE =
@@ -84,6 +94,17 @@ class StreamingService : Service() {
         super.onDestroy()
     }
 
+    fun connectWithTimeout(ip: String, port: Int, timeoutMillis: Int): Socket? {
+        return try {
+            Socket().apply {
+                connect(InetSocketAddress(ip, port), timeoutMillis)
+            }
+        } catch (e: Exception) {
+            println("Failed to connect within $timeoutMillis ms: ${e.message}")
+            null
+        }
+    }
+
     private fun beginStreaming(ip: String) {
         streamingJob?.cancel()
 
@@ -92,7 +113,15 @@ class StreamingService : Service() {
             var audioTrack: AudioTrack? = null
 
             try {
-                socket = Socket(ip, PORT)
+                TimeService.initialize(ip, PORT_SYNC)
+                TimeService.sync()
+
+                socket = connectWithTimeout(ip, PORT_STREAMING, TIMEOUT_MILLIS)
+                if (socket == null || !socket.isConnected) {
+                    throw UnknownHostException("Unable to connect")
+                }
+                sendServiceStatusUpdate(true)
+
                 val input: InputStream = DataInputStream(socket.getInputStream())
 
                 val headerBytes = ByteArray(HEADER_SIZE)
@@ -145,21 +174,40 @@ class StreamingService : Service() {
                 audioTrack.play()
 
                 val netBuffer = ByteArray(NETWORK_BUFFER_SIZE)
-                val floatCount = NETWORK_BUFFER_SIZE / bytesPerSample
-                val floatBuffer = FloatArray(floatCount)
+                val maxSamplesNumber = NETWORK_BUFFER_SIZE / bytesPerSample
+                val floatBuffer = FloatArray(maxSamplesNumber)
                 val tmpWrapper = ByteBuffer.wrap(netBuffer).order(ByteOrder.LITTLE_ENDIAN)
                 val floatView = tmpWrapper.asFloatBuffer()
 
+                val messageSizeBytes = ByteArray(MESSAGE_HEADER_SIZE)
+                val chunkHeaderBuffer = ByteBuffer.wrap(messageSizeBytes).order(ByteOrder.LITTLE_ENDIAN)
+
+                val departmentTimeBytes = ByteArray(TIMESTAMP_SIZE)
+                val departmentTimeBuffer = ByteBuffer.wrap(departmentTimeBytes).order(ByteOrder.LITTLE_ENDIAN)
+
                 while (isActive) {
-                    readFully(input, netBuffer, 0, NETWORK_BUFFER_SIZE)
+                    readFully(input, messageSizeBytes, 0, MESSAGE_HEADER_SIZE)
+                    val chunkSize = chunkHeaderBuffer.int
+                    chunkHeaderBuffer.clear()
+                    val samplesNumber = chunkSize / bytesPerSample
+
+                    readFully(input, departmentTimeBytes, 0, TIMESTAMP_SIZE)
+                    val departmentTime = departmentTimeBuffer.long
+                    departmentTimeBuffer.clear()
+
+                    val difference = TimeService.getServerTimeMillis() - departmentTime
+                    Log.d("LATENCY", "$chunkSize ${difference} ms")
+
+                    readFully(input, netBuffer, 0, chunkSize)
+
                     tmpWrapper.rewind()
                     floatView.rewind()
                     floatView.get(floatBuffer)
 
                     var offset = 0
-                    while (offset < floatCount) {
+                    while (offset < samplesNumber) {
                         val written = audioTrack.write(
-                            floatBuffer, offset, floatCount - offset,
+                            floatBuffer, offset, samplesNumber - offset,
                             AudioTrack.WRITE_BLOCKING
                         )
                         if (written < 0) {
@@ -168,8 +216,24 @@ class StreamingService : Service() {
                         offset += written
                     }
                 }
+            } catch (e: UnknownHostException) {
+                Log.e("StreamingService", "Connection error: ${e.message}", e)
+                sendErrorBroadcast(R.string.error_connection_failed)
+            } catch (e: SocketTimeoutException) {
+                Log.e("StreamingService", "Connection timeout: ${e.message}", e)
+                sendErrorBroadcast(R.string.error_connection_timeout)
+            } catch (e: IOException) {
+                Log.e("StreamingService", "Network I/O error: ${e.message}", e)
+                sendErrorBroadcast(R.string.error_network_io)
+            } catch (e: IllegalArgumentException) {
+                Log.e("StreamingService", "Invalid audio configuration: ${e.message}", e)
+                sendErrorBroadcast(R.string.error_unsupported_audio_format)
+            } catch (e: IllegalStateException) {
+                Log.e("StreamingService", "AudioTrack setup error: ${e.message}", e)
+                sendErrorBroadcast(R.string.error_audio_setup_failed)
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e("StreamingService", "An unexpected error occurred: ${e.message}", e)
+                sendErrorBroadcast(R.string.error_service_unknown)
             } finally {
                 audioTrack?.let {
                     it.stop()
@@ -195,9 +259,25 @@ class StreamingService : Service() {
         }
     }
 
+    private fun sendErrorBroadcast(errorMessageCode: Int) {
+        val intent = Intent(ServiceConstants.ACTION_SERVICE_ERROR).apply {
+            putExtra(ServiceConstants.EXTRA_ERROR_MESSAGE_CODE, errorMessageCode)
+        }
+        sendBroadcast(intent)
+    }
+
+    private fun sendServiceStatusUpdate(isRunning: Boolean) {
+        val intent = Intent(ServiceConstants.ACTION_SERVICE_STATUS_UPDATE).apply {
+            putExtra(ServiceConstants.EXTRA_SERVICE_RUNNING, isRunning)
+        }
+        sendBroadcast(intent)
+    }
+
     private fun stopStreaming() {
         streamingJob?.cancel()
         streamingJob = null
+
+        sendServiceStatusUpdate(false)
     }
 
     private fun createNotificationChannel() {

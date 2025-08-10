@@ -1,0 +1,8 @@
+{
+  "debugMode": true,
+  "network": {
+    "streamingPort": 20000,
+    "timeSyncPort": 20001,
+    "controlPort": 20002
+  }
+}

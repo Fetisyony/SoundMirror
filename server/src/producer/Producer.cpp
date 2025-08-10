@@ -17,8 +17,10 @@ inline int64_t getCurrentTimestamp() {
     return qpc.QuadPart;
 }
 
-Producer::Producer(QueueConstants::LockfreeAudioQueueType &audioQueue, const std::shared_ptr<AudioBufferPool> &bufferPool,
-                   std::atomic<bool> &keepRunning) : _audioQueue(audioQueue), _bufferPool(bufferPool), _keepRunning(keepRunning) {
+Producer::Producer(QueueConstants::LockfreeAudioQueueType &audioQueue,
+                   const std::shared_ptr<AudioBufferPool> &bufferPool,
+                   std::atomic<bool> &keepRunning) : _audioQueue(audioQueue), _bufferPool(bufferPool),
+                                                     _keepRunning(keepRunning) {
 }
 
 WAVEFORMATEX *Producer::initialize() {
@@ -28,10 +30,10 @@ WAVEFORMATEX *Producer::initialize() {
 
     _captureEvent = CreateEvent(
         /*lpEventAttributes=*/ nullptr,
-                               /*bManualReset=*/ FALSE,
-                               // - FALSE (auto-reset): once signaled and a thread wakes, it automatically resets to non-signaled.
-                               /*bInitialState=*/ FALSE, // - FALSE (initial state): start as non-signaled.
-                               /*lpName=*/ nullptr
+       /*bManualReset=*/ FALSE,
+       // - FALSE (auto-reset): once signaled and a thread wakes, it automatically resets to non-signaled.
+       /*bInitialState=*/ FALSE, // - FALSE (initial state): start as non-signaled.
+       /*lpName=*/ nullptr
     );
     if (!_captureEvent) {
         throw EventCreationFailureException(__FILE__, __FUNCTION__, __LINE__,
@@ -72,7 +74,7 @@ void Producer::configureThread() {
 #endif
 }
 
-void Producer::resetThreadSettings() {
+void Producer::resetThreadConfigurations() {
 #ifdef CONTROL_THREAD_PRIORITY_SETTINGS
     if (_mmTask) {
         AvRevertMmThreadCharacteristics(_mmTask);
@@ -118,12 +120,26 @@ void Producer::runProduction() {
 void Producer::stop() {
     isThreadRunning = false;
 
-    std::cout << "[Producer] Capture thread exiting.\n";
+    std::cout << "[Producer] Producer thread exiting.\n";
+}
+
+void Producer::join() {
+    if (workerThread.joinable()) {
+        std::cout << "Producer: Joining worker thread..." << std::endl;
+        workerThread.join();
+        std::cout << "Producer: Worker thread joined successfully." << std::endl;
+    } else {
+        std::cout << "Producer: Worker thread is not joinable (already joined or detached)." << std::endl;
+    }
 }
 
 Producer::~Producer() {
     stop();
+
     if (workerThread.joinable()) {
-        workerThread.join();
+        workerThread.detach();
+        std::cerr <<
+                "Producer: Warning! Worker thread was still joinable in destructor. Detached to prevent std::terminate()."
+                << " Ensure you call producer.join() explicitly if you want to wait for it." << std::endl;
     }
 }

@@ -42,13 +42,6 @@ void Consumer::stop() {
     std::cout << "[Consumer] Thread exiting.\n";
 }
 
-Consumer::~Consumer() {
-    stop();
-    if (workerThread.joinable()) {
-        workerThread.join();
-    }
-}
-
 void Consumer::runConsuming() {
     AudioChunk *chunkPtr = nullptr;
 
@@ -77,6 +70,25 @@ void Consumer::processChunk(AudioChunk *chunk) {
     _bufferPool->ReleaseChunk(chunk);
 }
 
-void Consumer::close() {
+void Consumer::join() {
+    if (workerThread.joinable()) {
+        std::cout << "Consumer: Waiting for worker thread to join..." << std::endl;
+        workerThread.join();
+        std::cout << "Consumer: Worker thread joined successfully." << std::endl;
+    } else {
+        std::cout << "Consumer: Worker thread is not joinable (already joined or detached)." << std::endl;
+    }
+}
+
+Consumer::~Consumer() {
+    stop();
+
     _consumerService->destroy();
+    if (workerThread.joinable()) {
+        std::cout << "Consumer: Joining worker thread..." << std::endl;
+        workerThread.join();
+        std::cout << "Consumer: Worker thread joined successfully." << std::endl;
+    } else {
+        std::cout << "Consumer: Worker thread is not joinable (already joined or detached)." << std::endl;
+    }
 }

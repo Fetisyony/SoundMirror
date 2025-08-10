@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.29)
 project(server)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-static")
 
 set(BOOST_ROOT "C:/local/boost_1_88_0")
 set(BOOST_INCLUDEDIR "${BOOST_ROOT}")
@@ -58,6 +59,17 @@ set(
         src/network/StreamingService.hpp
         src/consumer/IConsumerService.hpp
         src/wavefile/WaveConstants.hpp
+        src/timeservice/TimeSyncService.cpp
+        src/timeservice/TimeSyncService.hpp
+        src/config/ConfigManager.cpp
+        src/config/ConfigManager.hpp
+        src/timeservice/SyncException.hpp
+        src/exceptions/BaseException.hpp
+        src/network/networkanalyzer/NetworkAnalyzer.cpp
+        src/network/networkanalyzer/NetworkAnalyzer.hpp
+        src/network/socketserver/UDPSocketServer.cpp
+        src/network/socketserver/UDPSocketServer.hpp
+        src/network/socketserver/SocketConfig.hpp
 )
 
 add_executable(
@@ -65,6 +77,13 @@ add_executable(
         ${SERVER_SOURCES}
 )
 
+include(FetchContent)
+FetchContent_Declare(
+        nlohmann_json
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        GIT_TAG v3.12.0
+)
+FetchContent_MakeAvailable(nlohmann_json)
 target_link_libraries(
         server
         PRIVATE
@@ -75,5 +94,7 @@ target_link_libraries(
         propsys
         ksuser
         Avrt
+        Iphlpapi
+        nlohmann_json::nlohmann_json
 )
 target_compile_options(server PRIVATE -Wall -Wextra -pedantic)
