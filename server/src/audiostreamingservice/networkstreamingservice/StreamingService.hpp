@@ -25,13 +25,13 @@ public:
 
     ~StreamingService() override;
 private:
+
     std::shared_ptr<ISocketServer> _server{};
     int _port;
     bool _convertEndianess = ConfigManager::getInstance().getConfig().convertEndianess;
     WAVEFORMATEX *_format{};
 
     errcode_t start();
-    errcode_t stop();
     void showHostInfo() const;
     errcode_t announceFormat();
     errcode_t sendShort(unsigned short input_little_end);

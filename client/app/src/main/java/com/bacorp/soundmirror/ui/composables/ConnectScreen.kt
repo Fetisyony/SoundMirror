@@ -44,7 +44,7 @@ import java.time.format.DateTimeFormatter
 fun ConnectScreen(
     uiState: UiState,
     onIpChanged: (String) -> Unit,
-    onConnectClicked: () -> Unit,
+    onToggle: () -> Unit,
     onErrorDismissed: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
@@ -90,7 +90,7 @@ fun ConnectScreen(
                     shape = RoundedCornerShape(14.dp),
                     onClick = {
                         focusManager.clearFocus()
-                        onConnectClicked()
+                        onToggle()
                     },
                 ) {
                     val text = if (uiState.isStreaming)

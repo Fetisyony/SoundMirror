@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstring>
 
+#include "audiostreamingservice/recorder/utils.hpp"
 #include "mathutils/converters.hpp"
 #include "network/socketserver/tcpsocketserver/TCPSocketServer.hpp"
 
@@ -12,8 +13,30 @@ StreamingService::StreamingService(int port) : _port(port) {
     _server->init(config);
 }
 
-StreamingService::~StreamingService() {
-    stop();
+errcode_t StreamingService::start() {
+    auto rc = _server->start();
+    if (rc == OK)
+        announceFormat();
+    else
+        std::cout << "Error starting" << std::endl;
+    return rc;
+}
+
+errcode_t StreamingService::announceFormat() {
+    errcode_t rc = OK;
+
+    printFormat(_format);
+
+    if (rc == OK)
+        rc = sendShort(_format->nChannels);
+
+    if (rc == OK)
+        rc = sendShort(_format->wBitsPerSample / 8);
+
+    if (rc == OK)
+        rc = sendShort(static_cast<unsigned short>(_format->nSamplesPerSec));
+
+    return rc;
 }
 
 errcode_t StreamingService::initialize(WAVEFORMATEX *format) {
@@ -49,38 +72,6 @@ errcode_t StreamingService::consumeNewData(BYTE *data, UINT32 bytesCount) {
     return rc;
 }
 
-void StreamingService::destroy() {
-    stop();
-}
-
-errcode_t StreamingService::start() {
-    auto rc = _server->start();
-    if (rc == OK)
-        announceFormat();
-    else
-        std::cout << "Error starting" << std::endl;
-    return rc;
-}
-
-errcode_t StreamingService::stop() {
-    return _server->stop();
-}
-
-errcode_t StreamingService::announceFormat() {
-    errcode_t rc = OK;
-
-    if (rc == OK)
-        rc = sendShort(_format->nChannels);
-
-    if (rc == OK)
-        rc = sendShort(_format->wBitsPerSample / 8);
-
-    if (rc == OK)
-        rc = sendShort(static_cast<unsigned short>(_format->nSamplesPerSec));
-
-    return rc;
-}
-
 errcode_t StreamingService::sendShort(unsigned short input_little_end) {
     unsigned short input_big_end = swapEndianess(input_little_end);
     BYTE *buf = reinterpret_cast<BYTE *>(&input_big_end);
@@ -100,4 +91,12 @@ void StreamingService::showHostInfo() const {
     char *ip = inet_ntoa(*(struct in_addr *) host->h_addr_list[0]);
     printf("Server listening on port %d\n", _port);
     printf("Host IP: %s\n", ip);
+}
+
+void StreamingService::destroy() {
+    _server->stop();
+}
+
+StreamingService::~StreamingService() {
+    destroy();
 }

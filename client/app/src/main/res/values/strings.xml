@@ -12,6 +12,7 @@
     <string name="audio_streaming_notification_channel_name">Audio Streaming</string>
     <string name="connection_screen_title">Sound Mirror</string>
 
+    <string name="streaming_stopped">Streaming stopped.</string>
     <string name="error_connection_failed">Failed to connect to the streaming server.</string>
     <string name="error_connection_timeout">Connection timed out. Server might be unavailable.</string>
     <string name="error_network_io">Network communication error during streaming.</string>

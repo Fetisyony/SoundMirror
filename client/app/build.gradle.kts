@@ -59,6 +59,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.lifecycle.service)
     implementation(libs.ui)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.core.ktx)
