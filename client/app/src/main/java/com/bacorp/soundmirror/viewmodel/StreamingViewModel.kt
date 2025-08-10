@@ -13,8 +13,8 @@ import com.bacorp.soundmirror.R
 import com.bacorp.soundmirror.data.NetworkHelper
 import com.bacorp.soundmirror.data.SettingsRepository
 import com.bacorp.soundmirror.state.UiState
-import com.bacorp.soundmirror.streamingservice.StreamingService
-import com.bacorp.soundmirror.streamingservice.model.StreamingState
+import com.bacorp.soundmirror.streamingservice.StreamReceiverService
+import com.bacorp.soundmirror.streamingservice.model.PlaybackState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,17 +31,17 @@ class StreamingViewModel(
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
-    private var streamingServiceBinder: StreamingService.ServiceBinder? = null
+    private var streamReceiverServiceBinder: StreamReceiverService.ServiceBinder? = null
     private var isBound = false
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
-            val binder = service as StreamingService.ServiceBinder
-            streamingServiceBinder = binder
+            val binder = service as StreamReceiverService.ServiceBinder
+            streamReceiverServiceBinder = binder
             isBound = true
 
             viewModelScope.launch {
-                binder.streamingState.collect { streamingState ->
+                binder.playbackState.collect { streamingState ->
                     updateStreamingStatus(streamingState)
                 }
             }
@@ -49,7 +49,7 @@ class StreamingViewModel(
 
         override fun onServiceDisconnected(arg0: ComponentName) {
             isBound = false
-            streamingServiceBinder = null
+            streamReceiverServiceBinder = null
             _uiState.update { it.copy(isStreaming = false, errorMessageCode = R.string.streaming_stopped) }
         }
     }
@@ -96,8 +96,8 @@ class StreamingViewModel(
 
     private fun startForegroundService(ip: String) {
         val context = app.applicationContext
-        val intent = Intent(context, StreamingService::class.java).apply {
-            putExtra(StreamingService.EXTRA_IP, ip)
+        val intent = Intent(context, StreamReceiverService::class.java).apply {
+            putExtra(StreamReceiverService.EXTRA_IP, ip)
         }
         ContextCompat.startForegroundService(context, intent)
         context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
@@ -105,10 +105,10 @@ class StreamingViewModel(
 
     private fun stopStreaming() {
         if (isBound) {
-            streamingServiceBinder?.stopStreaming()
+            streamReceiverServiceBinder?.stopStreaming()
             getApplication<Application>().applicationContext.unbindService(connection)
             isBound = false
-            streamingServiceBinder = null
+            streamReceiverServiceBinder = null
         }
     }
 
@@ -121,12 +121,12 @@ class StreamingViewModel(
         super.onCleared()
     }
 
-    fun updateStreamingStatus(streamingState: StreamingState) {
-        when (streamingState) {
-            StreamingState.Connecting -> _uiState.update { it.copy(isStreaming = false) }
-            is StreamingState.Error -> _uiState.update { it.copy(errorMessageCode = streamingState.messageResId) }
-            StreamingState.Idle -> _uiState.update { it.copy(isStreaming = false) }
-            is StreamingState.Streaming -> _uiState.update { it.copy(isStreaming = true) }
+    fun updateStreamingStatus(playbackState: PlaybackState) {
+        when (playbackState) {
+            PlaybackState.Connecting -> _uiState.update { it.copy(isStreaming = false) }
+            is PlaybackState.Error -> _uiState.update { it.copy(errorMessageCode = playbackState.messageResId) }
+            PlaybackState.Idle -> _uiState.update { it.copy(isStreaming = false) }
+            is PlaybackState.Playback -> _uiState.update { it.copy(isStreaming = true) }
         }
     }
 }

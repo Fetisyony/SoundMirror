@@ -4,7 +4,7 @@ import android.media.AudioFormat
 import android.util.Log
 import com.bacorp.soundmirror.streamingservice.model.AudioChunk
 import com.bacorp.soundmirror.streamingservice.model.AudioFormatInfo
-import com.bacorp.soundmirror.streamingservice.model.StreamingConstants
+import com.bacorp.soundmirror.streamingservice.model.PlaybackConstants
 import com.bacorp.soundmirror.timeservice.TimeService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -34,16 +34,16 @@ class AudioStreamRepository {
     }
 
     fun getFormatInfo(): AudioFormatInfo {
-        val headerBytes = ByteArray(StreamingConstants.HEADER_SIZE)
+        val headerBytes = ByteArray(PlaybackConstants.HEADER_SIZE)
         runBlocking { readFully(inputStream, headerBytes) }
         return parseHeader(headerBytes)
     }
 
     fun getStream(): Flow<AudioChunk> {
         return flow {
-            val messageHeaderBytes = ByteArray(StreamingConstants.MESSAGE_HEADER_SIZE)
+            val messageHeaderBytes = ByteArray(PlaybackConstants.MESSAGE_HEADER_SIZE)
             val chunkHeaderBuffer = ByteBuffer.wrap(messageHeaderBytes).order(ByteOrder.LITTLE_ENDIAN)
-            val timestampBytes = ByteArray(StreamingConstants.TIMESTAMP_SIZE)
+            val timestampBytes = ByteArray(PlaybackConstants.TIMESTAMP_SIZE)
             val timestampBuffer = ByteBuffer.wrap(timestampBytes).order(ByteOrder.LITTLE_ENDIAN)
 
             while (true) {

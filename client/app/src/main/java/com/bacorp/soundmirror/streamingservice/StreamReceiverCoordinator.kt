@@ -2,12 +2,12 @@ package com.bacorp.soundmirror.streamingservice
 
 import android.util.Log
 import com.bacorp.soundmirror.R
-import com.bacorp.soundmirror.streamingservice.model.StreamingConstants.PORT_STREAMING
-import com.bacorp.soundmirror.streamingservice.model.StreamingConstants.PORT_SYNC
-import com.bacorp.soundmirror.streamingservice.model.StreamingConstants.TIMEOUT_MILLIS
-import com.bacorp.soundmirror.streamingservice.model.StreamingState
-import com.bacorp.soundmirror.streamingservice.model.StreamingState.Connecting
-import com.bacorp.soundmirror.streamingservice.model.StreamingState.Streaming
+import com.bacorp.soundmirror.streamingservice.model.PlaybackConstants.PORT_STREAMING
+import com.bacorp.soundmirror.streamingservice.model.PlaybackConstants.PORT_SYNC
+import com.bacorp.soundmirror.streamingservice.model.PlaybackConstants.TIMEOUT_MILLIS
+import com.bacorp.soundmirror.streamingservice.model.PlaybackState
+import com.bacorp.soundmirror.streamingservice.model.PlaybackState.Connecting
+import com.bacorp.soundmirror.streamingservice.model.PlaybackState.Playback
 import com.bacorp.soundmirror.timeservice.TimeService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,19 +22,19 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 
-class StreamCoordinator(
+class StreamReceiverCoordinator(
     private val repository: AudioStreamRepository,
     private val player: PlaybackManager,
     private val timeService: TimeService
 ) {
-    private val _state = MutableStateFlow<StreamingState>(StreamingState.Idle)
-    val state: StateFlow<StreamingState> = _state.asStateFlow()
+    private val _state = MutableStateFlow<PlaybackState>(PlaybackState.Idle)
+    val state: StateFlow<PlaybackState> = _state.asStateFlow()
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var streamingJob: Job? = null
 
     fun startStreaming(ip: String) {
-        if (state.value is Streaming || state.value is Connecting) {
+        if (state.value is Playback || state.value is Connecting) {
             return
         }
 
@@ -55,7 +55,7 @@ class StreamCoordinator(
                     if (!player.initialize(formatInfo)) {
                         throw IllegalStateException("Player failed to initialize")
                     }
-                    _state.value = Streaming(ip)
+                    _state.value = Playback(ip)
                 }
 
                 streamFlow.collect { chunk ->
@@ -83,13 +83,13 @@ class StreamCoordinator(
             is IllegalStateException -> R.string.error_audio_setup_failed
             else -> R.string.error_service_unknown
         }
-        _state.value = StreamingState.Error(errorResId)
+        _state.value = PlaybackState.Error(errorResId)
     }
 
     private fun stopInternal() {
         repository.disconnect()
         player.release()
-        _state.value = StreamingState.Idle
+        _state.value = PlaybackState.Idle
     }
 
     fun release() {

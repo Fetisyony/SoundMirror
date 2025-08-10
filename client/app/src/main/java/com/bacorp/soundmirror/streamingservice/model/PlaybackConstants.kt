@@ -1,6 +1,6 @@
 package com.bacorp.soundmirror.streamingservice.model
 
-object StreamingConstants {
+object PlaybackConstants {
     const val PORT_STREAMING = 20000
     const val PORT_SYNC = 20001
 

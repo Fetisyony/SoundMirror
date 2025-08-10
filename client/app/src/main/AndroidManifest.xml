@@ -31,7 +31,7 @@
             </intent-filter>
         </activity>
         <service
-            android:name=".streamingservice.StreamingService"
+            android:name=".streamingservice.StreamReceiverService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
     </application>

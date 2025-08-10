@@ -15,20 +15,20 @@ import androidx.lifecycle.lifecycleScope
 import com.bacorp.soundmirror.BuildConfig
 import com.bacorp.soundmirror.MainActivity
 import com.bacorp.soundmirror.R
-import com.bacorp.soundmirror.streamingservice.model.StreamingState
+import com.bacorp.soundmirror.streamingservice.model.PlaybackState
 import com.bacorp.soundmirror.timeservice.TimeService
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class StreamingService : LifecycleService() {
-    private lateinit var coordinator: StreamCoordinator
+class StreamReceiverService : LifecycleService() {
+    private lateinit var coordinator: StreamReceiverCoordinator
     private lateinit var notificationManager: StreamingNotificationManager
 
     inner class ServiceBinder : Binder() {
-        val streamingState: StateFlow<StreamingState> get() = coordinator.state
+        val playbackState: StateFlow<PlaybackState> get() = coordinator.state
 
         fun stopStreaming() {
-            this@StreamingService.shutdownService()
+            this@StreamReceiverService.shutdownService()
         }
     }
     private val binder = ServiceBinder()
@@ -44,7 +44,7 @@ class StreamingService : LifecycleService() {
         val timeService = TimeService
         val repository = AudioStreamRepository()
         val player = PlaybackManager()
-        coordinator = StreamCoordinator(repository, player, timeService)
+        coordinator = StreamReceiverCoordinator(repository, player, timeService)
         notificationManager = StreamingNotificationManager(this)
 
         notificationManager.createNotificationChannel()
@@ -52,11 +52,11 @@ class StreamingService : LifecycleService() {
         lifecycleScope.launch {
             coordinator.state.collect { state ->
                 when (state) {
-                    is StreamingState.Streaming -> {
+                    is PlaybackState.Playback -> {
                         val notification = notificationManager.buildNotification(state.ipAddress)
                         startForeground(NOTIFICATION_ID, notification)
                     }
-                    is StreamingState.Error -> {
+                    is PlaybackState.Error -> {
                         stopForeground(STOP_FOREGROUND_REMOVE)
                     }
                     else -> {}
@@ -82,7 +82,7 @@ class StreamingService : LifecycleService() {
 
     companion object {
         private const val PKG = BuildConfig.APPLICATION_ID
-        private val SERVICE_NAME = StreamingService::class.java.simpleName
+        private val SERVICE_NAME = StreamReceiverService::class.java.simpleName
 
         val EXTRA_IP = "${PKG}.${SERVICE_NAME}.EXTRA_IP"
 
