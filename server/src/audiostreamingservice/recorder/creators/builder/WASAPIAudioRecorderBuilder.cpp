@@ -6,8 +6,8 @@
 #include <mmdeviceapi.h>
 #include <combaseapi.h>
 #include "ErrorCodes.hpp"
-#include "recorder/utils.hpp"
-#include "recorder/WASAPIAudioRecorder.hpp"
+#include "audiostreamingservice/recorder/utils.hpp"
+#include "audiostreamingservice/recorder/WASAPIAudioRecorder.hpp"
 
 HRESULT WASAPIAudioRecorderBuilder::initEnumerator() {
     HRESULT hr = OK;

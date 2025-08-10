@@ -4,8 +4,8 @@
 #include <thread>
 
 #include "constants/QueueSizes.hpp"
-#include "recorder/WASAPIAudioRecorder.hpp"
-#include "AudioBufferPool.hpp"
+#include "audiostreamingservice/recorder/WASAPIAudioRecorder.hpp"
+#include "audiostreamingservice/audiobufferpool/AudioBufferPool.hpp"
 
 class Producer {
 public:

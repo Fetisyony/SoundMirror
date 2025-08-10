@@ -1,9 +1,7 @@
 #pragma once
-#include "../ISocketServer.hpp"
 #include <winsock2.h>
+#include "network/socketserver/ISocketServer.hpp"
 #include <string>
-
-#pragma comment(lib, "ws2_32.lib")
 
 class UDPSocketServer : public ISocketServer {
 public:

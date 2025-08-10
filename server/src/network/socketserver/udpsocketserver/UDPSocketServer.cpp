@@ -2,7 +2,7 @@
 #include <iostream>
 #include <ws2tcpip.h>
 
-#include "../exceptions/NotImplementedException.hpp"
+#include "network/socketserver/exceptions/NotImplementedException.hpp"
 #include "network/server_errors.hpp"
 
 errcode_t UDPSocketServer::init(const SocketConfig &config) {

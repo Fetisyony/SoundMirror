@@ -2,12 +2,12 @@
 
 #include <atomic>
 
-#include "AudioBufferPool.hpp"
+#include "audiostreamingservice/audiobufferpool/AudioBufferPool.hpp"
 #include "avrt.h"
 #include "ErrorCodes.hpp"
 #include "constants/QueueSizes.hpp"
-#include "recorder/creators/directors/sharedmode/WASAPIAudioSharedModeRecorderDirector.hpp"
-#include "recorder/exceptions/EventCreationFailureException.hpp"
+#include "audiostreamingservice/recorder/creators/directors/sharedmode/WASAPIAudioSharedModeRecorderDirector.hpp"
+#include "audiostreamingservice/recorder/exceptions/EventCreationFailureException.hpp"
 
 #define CONTROL_THREAD_PRIORITY_SETTINGS
 

@@ -5,8 +5,8 @@
 #include <windows.h>
 
 #include "ErrorCodes.hpp"
-#include "consumer/IConsumerService.hpp"
-#include "socketserver/ISocketServer.hpp"
+#include "audiostreamingservice/consumer/IConsumerService.hpp"
+#include "network/socketserver/ISocketServer.hpp"
 
 using namespace std;
 

@@ -1,8 +1,8 @@
 #pragma once
 #include <memory>
 
-#include "recorder/WASAPIAudioRecorder.hpp"
-#include "recorder/creators/builder/WASAPIAudioRecorderBuilder.hpp"
+#include "audiostreamingservice/recorder/WASAPIAudioRecorder.hpp"
+#include "audiostreamingservice/recorder/creators/builder/WASAPIAudioRecorderBuilder.hpp"
 
 
 class WASAPIAudioExclusiveModeRecorderDirector {

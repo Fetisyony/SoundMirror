@@ -8,7 +8,7 @@
 
 #include "ErrorCodes.hpp"
 #include "WaveConstants.hpp"
-#include "consumer/IConsumerService.hpp"
+#include "audiostreamingservice/consumer/IConsumerService.hpp"
 
 using std::cout;
 using std::endl;

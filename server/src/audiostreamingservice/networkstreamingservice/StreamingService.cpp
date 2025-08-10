@@ -4,7 +4,7 @@
 #include <cstring>
 
 #include "mathutils/converters.hpp"
-#include "socketserver/tcpsocketserver/TCPSocketServer.hpp"
+#include "network/socketserver/tcpsocketserver/TCPSocketServer.hpp"
 
 StreamingService::StreamingService(int port, bool convertEndianess) : _port(port), _convertEndianess(convertEndianess) {
     _server = std::make_shared<TCPSocketServer>();

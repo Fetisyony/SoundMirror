@@ -8,7 +8,7 @@
 #include <vector>
 #include <ws2tcpip.h>
 
-#include "../../networkanalyzer/NetworkAnalyzer.hpp"
+#include "network/networkanalyzer/NetworkAnalyzer.hpp"
 
 errcode_t TCPSocketServer::init(const SocketConfig &config) {
     errcode_t rc = OK;

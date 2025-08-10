@@ -1,6 +1,6 @@
-#include "recorder/creators/directors/sharedmode/WASAPIAudioSharedModeRecorderDirector.hpp"
+#include "audiostreamingservice/recorder/creators/directors/sharedmode/WASAPIAudioSharedModeRecorderDirector.hpp"
 #include "ErrorCodes.hpp"
-#include "recorder/exceptions/RecorderCreationFailed.hpp"
+#include "audiostreamingservice/recorder/exceptions/RecorderCreationFailed.hpp"
 
 WASAPIAudioSharedModeRecorderDirector::WASAPIAudioSharedModeRecorderDirector(HANDLE eventHandle)
     : _eventHandle(eventHandle) {}

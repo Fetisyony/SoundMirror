@@ -3,7 +3,7 @@
 #include <memory>
 #include <thread>
 
-#include "AudioBufferPool.hpp"
+#include "audiostreamingservice/audiobufferpool/AudioBufferPool.hpp"
 #include "ErrorCodes.hpp"
 #include "IConsumerService.hpp"
 #include "constants/QueueSizes.hpp"

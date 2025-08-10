@@ -9,7 +9,7 @@
 
 #include <setupapi.h>
 
-#include "recorder/WASAPIAudioRecorder.hpp"
+#include "audiostreamingservice/recorder/WASAPIAudioRecorder.hpp"
 
 #include <windows.h>
 

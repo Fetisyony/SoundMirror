@@ -2,7 +2,7 @@
 #include <vector>
 
 #include "ErrorCodes.hpp"
-#include "../ISocketServer.hpp"
+#include "network/socketserver/ISocketServer.hpp"
 
 class TCPSocketServer final : public ISocketServer {
 public:

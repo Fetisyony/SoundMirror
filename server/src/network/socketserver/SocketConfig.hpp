@@ -7,6 +7,6 @@ struct SocketConfig {
     uint16_t server_port = 0;
 
     // --- UDP Specific ---
-    std::string client_ip;
+    std::string client_ip = "";
     uint16_t client_port = 0;
 };

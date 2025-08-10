@@ -4,61 +4,55 @@ project(server)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-static")
 
-set(BOOST_ROOT "C:/local/boost_1_88_0")
-set(BOOST_INCLUDEDIR "${BOOST_ROOT}")
-
-find_package(Boost REQUIRED)
-if (Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
-endif()
+find_package(Boost CONFIG REQUIRED COMPONENTS lockfree)
 
 include_directories(src)
 
 set(
         SERVER_SOURCES
         cmd/app.cpp
-        src/recorder/WASAPIAudioRecorder.cpp
-        src/recorder/WASAPIAudioRecorder.hpp
+        src/audiostreamingservice/recorder/WASAPIAudioRecorder.cpp
+        src/audiostreamingservice/recorder/WASAPIAudioRecorder.hpp
 
         src/mathutils/converters.cpp
         src/mathutils/converters.hpp
 
-        src/wavefile/WaveCreator.cpp
-        src/wavefile/WaveCreator.hpp
+        src/audiostreamingservice/wavefile/WaveCreator.cpp
+        src/audiostreamingservice/wavefile/WaveCreator.hpp
 
         src/ErrorsConfig.cpp
         src/ErrorCodes.hpp
 
-        src/recorder/creators/builder/WASAPIAudioRecorderBuilder.cpp
-        src/recorder/creators/builder/WASAPIAudioRecorderBuilder.hpp
-        src/recorder/creators/directors/sharedmode/WASAPIAudioSharedModeRecorderDirector.cpp
-        src/recorder/creators/directors/sharedmode/WASAPIAudioSharedModeRecorderDirector.hpp
-        src/recorder/creators/directors/exclusivemode/WASAPIAudioExclusiveModeRecorderDirector.cpp
-        src/recorder/creators/directors/exclusivemode/WASAPIAudioExclusiveModeRecorderDirector.hpp
+        src/audiostreamingservice/recorder/creators/builder/WASAPIAudioRecorderBuilder.cpp
+        src/audiostreamingservice/recorder/creators/builder/WASAPIAudioRecorderBuilder.hpp
+        src/audiostreamingservice/recorder/creators/directors/sharedmode/WASAPIAudioSharedModeRecorderDirector.cpp
+        src/audiostreamingservice/recorder/creators/directors/sharedmode/WASAPIAudioSharedModeRecorderDirector.hpp
+        src/audiostreamingservice/recorder/creators/directors/exclusivemode/WASAPIAudioExclusiveModeRecorderDirector.cpp
+        src/audiostreamingservice/recorder/creators/directors/exclusivemode/WASAPIAudioExclusiveModeRecorderDirector.hpp
 
-        src/recorder/ErrorHandling.hpp
+        src/audiostreamingservice/recorder/ErrorHandling.hpp
 
-        src/recorder/utils.cpp
-        src/recorder/utils.hpp
-        src/recorder/exceptions/BaseRecorderException.hpp
-        src/recorder/exceptions/EventCreationFailureException.hpp
-        src/recorder/exceptions/StartRecordingFailure.hpp
-        src/recorder/exceptions/ChunkRecordingFailure.hpp
-        src/consumer/Consumer.cpp
-        src/consumer/Consumer.hpp
-        src/producer/Producer.cpp
-        src/producer/Producer.hpp
-        src/AudioBufferPool.cpp
-        src/AudioBufferPool.hpp
-        src/recorder/exceptions/RecorderCreationFailed.hpp
+        src/audiostreamingservice/recorder/utils.cpp
+        src/audiostreamingservice/recorder/utils.hpp
+        src/audiostreamingservice/recorder/exceptions/BaseRecorderException.hpp
+        src/audiostreamingservice/recorder/exceptions/EventCreationFailureException.hpp
+        src/audiostreamingservice/recorder/exceptions/StartRecordingFailure.hpp
+        src/audiostreamingservice/recorder/exceptions/ChunkRecordingFailure.hpp
+        src/audiostreamingservice/consumer/Consumer.cpp
+        src/audiostreamingservice/consumer/Consumer.hpp
+        src/audiostreamingservice/producer/Producer.cpp
+        src/audiostreamingservice/producer/Producer.hpp
+        src/audiostreamingservice/audiobufferpool/AudioBufferPool.cpp
+        src/audiostreamingservice/audiobufferpool/AudioBufferPool.hpp
+        src/audiostreamingservice/recorder/exceptions/RecorderCreationFailed.hpp
         src/constants/QueueSizes.hpp
-        src/network/StreamingService.cpp
+        src/audiostreamingservice/networkstreamingservice/StreamingService.cpp
         src/network/socketserver/tcpsocketserver/TCPSocketServer.cpp
         src/network/socketserver/tcpsocketserver/TCPSocketServer.hpp
         src/network/socketserver/ISocketServer.hpp
-        src/network/StreamingService.hpp
-        src/consumer/IConsumerService.hpp
-        src/wavefile/WaveConstants.hpp
+        src/audiostreamingservice/networkstreamingservice/StreamingService.hpp
+        src/audiostreamingservice/consumer/IConsumerService.hpp
+        src/audiostreamingservice/wavefile/WaveConstants.hpp
         src/timeservice/TimeSyncService.cpp
         src/timeservice/TimeSyncService.hpp
         src/config/ConfigManager.cpp
@@ -96,5 +90,6 @@ target_link_libraries(
         Avrt
         Iphlpapi
         nlohmann_json::nlohmann_json
+        Boost::lockfree
 )
 target_compile_options(server PRIVATE -Wall -Wextra -pedantic)

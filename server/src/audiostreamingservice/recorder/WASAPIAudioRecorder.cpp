@@ -1,4 +1,5 @@
-#include "recorder/WASAPIAudioRecorder.hpp"
+#include "WASAPIAudioRecorder.hpp"
+#include "WASAPIAudioRecorder.hpp"
 
 #include <functional>
 

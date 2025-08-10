@@ -5,7 +5,7 @@
 #include <thread>
 #include <windows.h>
 
-#include "../network/socketserver/tcpsocketserver/TCPSocketServer.hpp"
+#include "network/socketserver/tcpsocketserver/TCPSocketServer.hpp"
 #include "timeservice/SyncException.hpp"
 
 TimeSyncService::TimeSyncService(int port) : _port(port) {

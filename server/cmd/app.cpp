@@ -1,14 +1,14 @@
 #include <boost/lockfree/spsc_queue.hpp>
 
-#include "producer/Producer.hpp"
-#include "AudioBufferPool.hpp"
+#include "audiostreamingservice/producer/Producer.hpp"
+#include "audiostreamingservice/audiobufferpool/AudioBufferPool.hpp"
+#include "audiostreamingservice/networkstreamingservice/StreamingService.hpp"
+#include "audiostreamingservice/consumer/Consumer.hpp"
+#include "audiostreamingservice/wavefile/WaveCreator.hpp"
 #include "config/ConfigManager.hpp"
 #include "constants/QueueSizes.hpp"
-#include "consumer/Consumer.hpp"
-#include "network/StreamingService.hpp"
 #include "timeservice/SyncException.hpp"
 #include "timeservice/TimeSyncService.hpp"
-#include "wavefile/WaveCreator.hpp"
 
 void launch() {
     const AppConfig &appConfig = ConfigManager::getInstance().getConfig();
