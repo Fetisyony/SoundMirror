@@ -1,5 +1,4 @@
-package com.bacorp.soundmirror.streamingservice
-
+package com.bacorp.soundmirror.streamingservice.model
 
 sealed class StreamingState {
     object Idle : StreamingState()

@@ -1,6 +1,7 @@
-package com.bacorp.soundmirror.streamingservice.timeservice
+package com.bacorp.soundmirror.timeservice
 
 import android.util.Log
+import com.bacorp.soundmirror.timeservice.TimeServiceConstants.TIMEOUT
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.DataInputStream
@@ -19,16 +20,12 @@ object TimeService {
     @Volatile
     private var timeOffsetMs: Long = 0L
 
-    private const val TIMEOUT = 5000
-
     fun initialize(ip: String, port: Int) {
         this.serverIp = ip
         this.serverPort = port
     }
 
     suspend fun sync() = withContext(Dispatchers.IO) {
-        Log.d("hello", "syncing: $serverIp $serverPort")
-
         Socket(serverIp, serverPort).use { socket ->
             socket.soTimeout = TIMEOUT
 

@@ -4,7 +4,7 @@ import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.util.Log
-import com.bacorp.soundmirror.streamingservice.audiostreammodels.AudioFormatInfo
+import com.bacorp.soundmirror.streamingservice.model.AudioFormatInfo
 
 class PlaybackManager {
     private var audioTrack: AudioTrack? = null

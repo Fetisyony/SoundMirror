@@ -14,7 +14,7 @@ import com.bacorp.soundmirror.data.NetworkHelper
 import com.bacorp.soundmirror.data.SettingsRepository
 import com.bacorp.soundmirror.state.UiState
 import com.bacorp.soundmirror.streamingservice.StreamingService
-import com.bacorp.soundmirror.streamingservice.StreamingState
+import com.bacorp.soundmirror.streamingservice.model.StreamingState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

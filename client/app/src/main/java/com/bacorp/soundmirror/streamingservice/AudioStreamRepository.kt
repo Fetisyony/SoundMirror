@@ -2,9 +2,10 @@ package com.bacorp.soundmirror.streamingservice
 
 import android.media.AudioFormat
 import android.util.Log
-import com.bacorp.soundmirror.streamingservice.audiostreammodels.AudioChunk
-import com.bacorp.soundmirror.streamingservice.audiostreammodels.AudioFormatInfo
-import com.bacorp.soundmirror.streamingservice.timeservice.TimeService
+import com.bacorp.soundmirror.streamingservice.model.AudioChunk
+import com.bacorp.soundmirror.streamingservice.model.AudioFormatInfo
+import com.bacorp.soundmirror.streamingservice.model.StreamingConstants
+import com.bacorp.soundmirror.timeservice.TimeService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow

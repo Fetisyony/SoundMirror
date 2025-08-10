@@ -1,15 +1,14 @@
 package com.bacorp.soundmirror.streamingservice
 
-import android.media.AudioFormat
 import android.util.Log
 import com.bacorp.soundmirror.R
-import com.bacorp.soundmirror.streamingservice.StreamingConstants.PORT_STREAMING
-import com.bacorp.soundmirror.streamingservice.StreamingConstants.PORT_SYNC
-import com.bacorp.soundmirror.streamingservice.StreamingConstants.TIMEOUT_MILLIS
-import com.bacorp.soundmirror.streamingservice.StreamingState.Connecting
-import com.bacorp.soundmirror.streamingservice.StreamingState.Streaming
-import com.bacorp.soundmirror.streamingservice.audiostreammodels.AudioFormatInfo
-import com.bacorp.soundmirror.streamingservice.timeservice.TimeService
+import com.bacorp.soundmirror.streamingservice.model.StreamingConstants.PORT_STREAMING
+import com.bacorp.soundmirror.streamingservice.model.StreamingConstants.PORT_SYNC
+import com.bacorp.soundmirror.streamingservice.model.StreamingConstants.TIMEOUT_MILLIS
+import com.bacorp.soundmirror.streamingservice.model.StreamingState
+import com.bacorp.soundmirror.streamingservice.model.StreamingState.Connecting
+import com.bacorp.soundmirror.streamingservice.model.StreamingState.Streaming
+import com.bacorp.soundmirror.timeservice.TimeService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

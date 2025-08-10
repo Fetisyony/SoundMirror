@@ -1,4 +1,4 @@
-package com.bacorp.soundmirror.streamingservice
+package com.bacorp.soundmirror.streamingservice.model
 
 object StreamingConstants {
     const val PORT_STREAMING = 20000

@@ -1,4 +1,4 @@
-package com.bacorp.soundmirror.streamingservice.audiostreammodels
+package com.bacorp.soundmirror.streamingservice.model
 
 data class AudioFormatInfo(
     val sampleRate: Int,

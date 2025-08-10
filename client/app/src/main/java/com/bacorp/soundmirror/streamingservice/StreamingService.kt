@@ -15,7 +15,8 @@ import androidx.lifecycle.lifecycleScope
 import com.bacorp.soundmirror.BuildConfig
 import com.bacorp.soundmirror.MainActivity
 import com.bacorp.soundmirror.R
-import com.bacorp.soundmirror.streamingservice.timeservice.TimeService
+import com.bacorp.soundmirror.streamingservice.model.StreamingState
+import com.bacorp.soundmirror.timeservice.TimeService
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
