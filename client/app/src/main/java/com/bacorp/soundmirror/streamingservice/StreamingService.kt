@@ -27,7 +27,7 @@ class StreamingService : LifecycleService() {
         val streamingState: StateFlow<StreamingState> get() = coordinator.state
 
         fun stopStreaming() {
-            this@StreamingService.onDestroy()
+            this@StreamingService.shutdownService()
         }
     }
     private val binder = ServiceBinder()
@@ -71,10 +71,12 @@ class StreamingService : LifecycleService() {
         return START_NOT_STICKY
     }
 
-    override fun onDestroy() {
-        stopSelf()
+    private fun shutdownService() {
+        stopForeground(STOP_FOREGROUND_REMOVE)
+
         coordinator.release()
-        super.onDestroy()
+
+        stopSelf()
     }
 
     companion object {
