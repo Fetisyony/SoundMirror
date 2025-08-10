@@ -53,8 +53,8 @@ set(
         src/recorder/exceptions/RecorderCreationFailed.hpp
         src/constants/QueueSizes.hpp
         src/network/StreamingService.cpp
-        src/network/socketserver/TCPSocketServer.cpp
-        src/network/socketserver/TCPSocketServer.hpp
+        src/network/socketserver/tcpsocketserver/TCPSocketServer.cpp
+        src/network/socketserver/tcpsocketserver/TCPSocketServer.hpp
         src/network/socketserver/ISocketServer.hpp
         src/network/StreamingService.hpp
         src/consumer/IConsumerService.hpp
@@ -67,8 +67,8 @@ set(
         src/exceptions/BaseException.hpp
         src/network/networkanalyzer/NetworkAnalyzer.cpp
         src/network/networkanalyzer/NetworkAnalyzer.hpp
-        src/network/socketserver/UDPSocketServer.cpp
-        src/network/socketserver/UDPSocketServer.hpp
+        src/network/socketserver/udpsocketserver/UDPSocketServer.cpp
+        src/network/socketserver/udpsocketserver/UDPSocketServer.hpp
         src/network/socketserver/SocketConfig.hpp
 )
 

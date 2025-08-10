@@ -5,12 +5,13 @@
 #include <thread>
 #include <windows.h>
 
-#include "network/socketserver/TCPSocketServer.hpp"
+#include "../network/socketserver/tcpsocketserver/TCPSocketServer.hpp"
 #include "timeservice/SyncException.hpp"
 
 TimeSyncService::TimeSyncService(int port) : _port(port) {
     _server = std::make_shared<TCPSocketServer>();
-    _server->init(_port);
+    auto config = SocketConfig(_port);
+    _server->init(config);
 }
 
 void TimeSyncService::sync() {

@@ -8,12 +8,12 @@
 #include <vector>
 #include <ws2tcpip.h>
 
-#include "../networkanalyzer/NetworkAnalyzer.hpp"
+#include "../../networkanalyzer/NetworkAnalyzer.hpp"
 
-errcode_t TCPSocketServer::init(int port) {
+errcode_t TCPSocketServer::init(const SocketConfig &config) {
     errcode_t rc = OK;
 
-    _port = port;
+    _port = config.server_port;
 
     _serverAddr.sin_family = AF_INET; // IPv4
     _serverAddr.sin_port = htons(_port); // Convert to network byte order
@@ -74,7 +74,7 @@ void TCPSocketServer::showHostInfo() {
     }
 }
 
-errcode_t TCPSocketServer::sendMessage(BYTE *message, UINT32 size) {
+errcode_t TCPSocketServer::sendMessage(const BYTE *message, UINT32 size) {
     int bytes_send = send(_clientSocket, reinterpret_cast<const char *>(message), size, 0);
     if (bytes_send == SOCKET_ERROR) {
         cout << "Error while sending" << endl;

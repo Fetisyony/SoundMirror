@@ -2,13 +2,13 @@
 #include <vector>
 
 #include "ErrorCodes.hpp"
-#include "ISocketServer.hpp"
+#include "../ISocketServer.hpp"
 
 class TCPSocketServer final : public ISocketServer {
 public:
     ~TCPSocketServer() override;
 
-    errcode_t init(int port) override;
+    errcode_t init(const SocketConfig &config) override;
 
     errcode_t start() override;
 
@@ -16,7 +16,7 @@ public:
 
     void showHostInfo() override;
 
-    errcode_t sendMessage(BYTE *message, UINT32 size) override;
+    errcode_t sendMessage(const BYTE *message, UINT32 size) override;
 
     errcode_t recvAll(void *data, int size) override;
     errcode_t recvMessage(BYTE *buffer, UINT32 bufferSize, UINT32 &bytes_received) override;

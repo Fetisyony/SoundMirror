@@ -1,4 +1,4 @@
-#include "../socketserver/NetworkAnalyzer.hpp"
+#include "NetworkAnalyzer.hpp"
 
 #include <winsock2.h>
 #include <iostream>
