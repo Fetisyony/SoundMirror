@@ -10,6 +10,19 @@
 #include "timesyncservice/SyncException.hpp"
 #include "timesyncservice/TimeSyncService.hpp"
 
+
+void launch();
+
+int main() {
+    ConfigManager::getInstance().initialize("../src/config/config.json");
+
+    while (true) {
+        launch();
+    }
+
+    return 0;
+}
+
 void launch() {
     const AppConfig &appConfig = ConfigManager::getInstance().getConfig();
 
@@ -40,14 +53,4 @@ void launch() {
     producer.join();
     consumer.join();
     keepRunning.store(false, std::memory_order_release);
-}
-
-int main() {
-    ConfigManager::getInstance().initialize("../src/config/config.json");
-
-    while (true) {
-        launch();
-    }
-
-    return 0;
 }

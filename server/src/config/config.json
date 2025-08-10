@@ -1,5 +1,6 @@
 {
   "debugMode": true,
+  "convertEndianess": false,
   "network": {
     "streamingPort": 20000,
     "timeSyncPort": 20001,

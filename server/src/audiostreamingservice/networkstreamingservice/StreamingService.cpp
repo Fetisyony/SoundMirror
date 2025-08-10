@@ -6,7 +6,7 @@
 #include "mathutils/converters.hpp"
 #include "network/socketserver/tcpsocketserver/TCPSocketServer.hpp"
 
-StreamingService::StreamingService(int port, bool convertEndianess) : _port(port), _convertEndianess(convertEndianess) {
+StreamingService::StreamingService(int port) : _port(port) {
     _server = std::make_shared<TCPSocketServer>();
     auto config = SocketConfig(_port);
     _server->init(config);

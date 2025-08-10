@@ -13,6 +13,7 @@ struct NetworkConfig {
 
 struct AppConfig {
     bool debugMode;
+    bool convertEndianess;
     NetworkConfig network;
 };
 

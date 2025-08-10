@@ -6,6 +6,7 @@
 
 #include "ErrorCodes.hpp"
 #include "audiostreamingservice/consumer/IConsumerService.hpp"
+#include "config/ConfigManager.hpp"
 #include "network/socketserver/ISocketServer.hpp"
 
 using namespace std;
@@ -14,7 +15,7 @@ typedef unsigned char BYTE;
 
 class StreamingService final : public IConsumerService {
 public:
-    explicit StreamingService(int port, bool convertEndianess = false);
+    explicit StreamingService(int port);
 
     errcode_t initialize(WAVEFORMATEX *format) override;
 
@@ -26,7 +27,7 @@ public:
 private:
     std::shared_ptr<ISocketServer> _server{};
     int _port;
-    bool _convertEndianess;
+    bool _convertEndianess = ConfigManager::getInstance().getConfig().convertEndianess;
     WAVEFORMATEX *_format{};
 
     errcode_t start();
