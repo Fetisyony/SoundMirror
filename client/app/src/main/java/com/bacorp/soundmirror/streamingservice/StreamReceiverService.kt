@@ -15,13 +15,17 @@ import androidx.lifecycle.lifecycleScope
 import com.bacorp.soundmirror.BuildConfig
 import com.bacorp.soundmirror.MainActivity
 import com.bacorp.soundmirror.R
-import com.bacorp.soundmirror.streamingservice.model.PlaybackState
-import com.bacorp.soundmirror.timeservice.TimeService
+import com.bacorp.soundmirror.streamingservice.data.StreamReceiverCoordinator
+import com.bacorp.soundmirror.streamingservice.data.model.PlaybackState
+import dagger.hilt.android.AndroidEntryPoint
+import jakarta.inject.Inject
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class StreamReceiverService : LifecycleService() {
-    private lateinit var coordinator: StreamReceiverCoordinator
+    @Inject
+    lateinit var coordinator: StreamReceiverCoordinator
     private lateinit var notificationManager: StreamingNotificationManager
 
     inner class ServiceBinder : Binder() {
@@ -41,10 +45,6 @@ class StreamReceiverService : LifecycleService() {
     override fun onCreate() {
         super.onCreate()
 
-        val timeService = TimeService
-        val repository = AudioStreamRepository()
-        val player = PlaybackManager()
-        coordinator = StreamReceiverCoordinator(repository, player, timeService)
         notificationManager = StreamingNotificationManager(this)
 
         notificationManager.createNotificationChannel()

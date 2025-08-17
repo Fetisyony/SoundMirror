@@ -1,14 +1,13 @@
-package com.bacorp.soundmirror.streamingservice
+package com.bacorp.soundmirror.streamingservice.data
 
 import android.util.Log
 import com.bacorp.soundmirror.R
-import com.bacorp.soundmirror.streamingservice.model.PlaybackConstants.PORT_STREAMING
-import com.bacorp.soundmirror.streamingservice.model.PlaybackConstants.PORT_SYNC
-import com.bacorp.soundmirror.streamingservice.model.PlaybackConstants.TIMEOUT_MILLIS
-import com.bacorp.soundmirror.streamingservice.model.PlaybackState
-import com.bacorp.soundmirror.streamingservice.model.PlaybackState.Connecting
-import com.bacorp.soundmirror.streamingservice.model.PlaybackState.Playback
+import com.bacorp.soundmirror.streamingservice.domain.AudioConsumer
+import com.bacorp.soundmirror.streamingservice.domain.AudioStreamClient
+import com.bacorp.soundmirror.streamingservice.data.model.PlaybackConstants
+import com.bacorp.soundmirror.streamingservice.data.model.PlaybackState
 import com.bacorp.soundmirror.timeservice.TimeService
+import jakarta.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,9 +21,9 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 
-class StreamReceiverCoordinator(
-    private val repository: AudioStreamRepository,
-    private val player: PlaybackManager,
+class StreamReceiverCoordinator @Inject constructor(
+    private val client: AudioStreamClient,
+    private val consumer: AudioConsumer,
     private val timeService: TimeService
 ) {
     private val _state = MutableStateFlow<PlaybackState>(PlaybackState.Idle)
@@ -34,35 +33,38 @@ class StreamReceiverCoordinator(
     private var streamingJob: Job? = null
 
     fun startStreaming(ip: String) {
-        if (state.value is Playback || state.value is Connecting) {
+        if (state.value is PlaybackState.Playback || state.value is PlaybackState.Connecting) {
             return
         }
 
         streamingJob?.cancel()
         streamingJob = scope.launch {
             try {
-                _state.value = Connecting
+                _state.value = PlaybackState.Connecting
 
-                timeService.initialize(ip, PORT_SYNC)
+                timeService.initialize(ip, PlaybackConstants.PORT_SYNC)
                 timeService.sync()
 
-                repository.initialize(ip, PORT_STREAMING, TIMEOUT_MILLIS)
-                val formatInfo = repository.getFormatInfo()
+                client.initialize(ip,
+                    PlaybackConstants.PORT_STREAMING,
+                    PlaybackConstants.TIMEOUT_MILLIS
+                )
+                val formatInfo = client.getFormatInfo()
 
-                val streamFlow = repository.getStream()
+                val streamFlow = client.getStream()
 
-                if (state.value is Connecting) {
-                    if (!player.initialize(formatInfo)) {
+                if (state.value is PlaybackState.Connecting) {
+                    if (!consumer.initialize(formatInfo)) {
                         throw IllegalStateException("Player failed to initialize")
                     }
-                    _state.value = Playback(ip)
+                    _state.value = PlaybackState.Playback(ip)
                 }
 
                 streamFlow.collect { chunk ->
                     val latency = timeService.getServerTimeMillis() - chunk.departmentTimestamp
                     Log.d("LATENCY_collected", "$latency ms")
 
-                    player.playChunk(chunk.data)
+                    consumer.playChunk(chunk.data)
                 }
             } catch (e: Exception) {
                 handleStreamingError(e)
@@ -86,8 +88,8 @@ class StreamReceiverCoordinator(
     }
 
     private fun stopInternal() {
-        repository.disconnect()
-        player.release()
+        client.disconnect()
+        consumer.release()
         _state.value = PlaybackState.Idle
     }
 

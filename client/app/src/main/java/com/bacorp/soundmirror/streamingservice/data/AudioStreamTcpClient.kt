@@ -1,10 +1,11 @@
-package com.bacorp.soundmirror.streamingservice
+package com.bacorp.soundmirror.streamingservice.data
 
 import android.media.AudioFormat
 import android.util.Log
-import com.bacorp.soundmirror.streamingservice.model.AudioChunk
-import com.bacorp.soundmirror.streamingservice.model.AudioFormatInfo
-import com.bacorp.soundmirror.streamingservice.model.PlaybackConstants
+import com.bacorp.soundmirror.streamingservice.domain.AudioStreamClient
+import com.bacorp.soundmirror.streamingservice.data.model.AudioChunk
+import com.bacorp.soundmirror.streamingservice.data.model.AudioFormatInfo
+import com.bacorp.soundmirror.streamingservice.data.model.PlaybackConstants
 import com.bacorp.soundmirror.timeservice.TimeService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -21,28 +22,32 @@ import java.net.InetSocketAddress
 import java.net.Socket
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import javax.inject.Inject
 
-class AudioStreamRepository {
+class AudioStreamTcpClient @Inject constructor(
+    private val timeService: TimeService
+) : AudioStreamClient {
     private var socket: Socket? = null
     private lateinit var inputStream: InputStream
 
-    fun initialize(ip: String, port: Int, timeout: Int) {
+    override fun initialize(ip: String, port: Int, timeout: Int) {
         socket = Socket().apply {
             connect(InetSocketAddress(ip, port), timeout)
         }
         inputStream = DataInputStream(socket!!.getInputStream())
     }
 
-    fun getFormatInfo(): AudioFormatInfo {
+    override fun getFormatInfo(): AudioFormatInfo {
         val headerBytes = ByteArray(PlaybackConstants.HEADER_SIZE)
         runBlocking { readFully(inputStream, headerBytes) }
         return parseHeader(headerBytes)
     }
 
-    fun getStream(): Flow<AudioChunk> {
+    override fun getStream(): Flow<AudioChunk> {
         return flow {
             val messageHeaderBytes = ByteArray(PlaybackConstants.MESSAGE_HEADER_SIZE)
-            val chunkHeaderBuffer = ByteBuffer.wrap(messageHeaderBytes).order(ByteOrder.LITTLE_ENDIAN)
+            val chunkHeaderBuffer =
+                ByteBuffer.wrap(messageHeaderBytes).order(ByteOrder.LITTLE_ENDIAN)
             val timestampBytes = ByteArray(PlaybackConstants.TIMESTAMP_SIZE)
             val timestampBuffer = ByteBuffer.wrap(timestampBytes).order(ByteOrder.LITTLE_ENDIAN)
 
@@ -66,17 +71,23 @@ class AudioStreamRepository {
                     .asFloatBuffer()
                     .get(floatBuffer)
 
-                val latency = TimeService.getServerTimeMillis() - departmentTime
+                val latency = timeService.getServerTimeMillis() - departmentTime
                 Log.d("LATENCY_emitted", "$latency ms")
-                emit(AudioChunk(data = floatBuffer, departmentTimestamp = departmentTime, emittingLatency = latency))
+                emit(
+                    AudioChunk(
+                        data = floatBuffer,
+                        departmentTimestamp = departmentTime,
+                        emittingLatency = latency
+                    )
+                )
             }
         }
             .flowOn(Dispatchers.IO)
-            .buffer(50)
+            .buffer(10)
             .conflate()
     }
 
-    fun disconnect() {
+    override fun disconnect() {
         try {
             socket?.close()
             inputStream.close()
@@ -97,7 +108,7 @@ class AudioStreamRepository {
         }
     }
 
-    fun parseHeader(headerBytes: ByteArray): AudioFormatInfo {
+    private fun parseHeader(headerBytes: ByteArray): AudioFormatInfo {
         val headerBuffer = ByteBuffer.wrap(headerBytes).order(ByteOrder.BIG_ENDIAN)
         val nChannels = headerBuffer.short.toInt() and 0xFFFF
         val bytesPerSample = headerBuffer.short.toInt() and 0xFFFF

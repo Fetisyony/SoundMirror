@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets
 import java.time.Instant
 import kotlin.properties.Delegates
 
-object TimeService {
+class TimeService {
     private lateinit var serverIp: String
     private var serverPort by Delegates.notNull<Int>()
 

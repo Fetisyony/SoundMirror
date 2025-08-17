@@ -12,7 +12,7 @@ import com.bacorp.soundmirror.R
 import com.bacorp.soundmirror.domain.PreferencesRepository
 import com.bacorp.soundmirror.presentation.state.UiState
 import com.bacorp.soundmirror.streamingservice.StreamReceiverService
-import com.bacorp.soundmirror.streamingservice.model.PlaybackState
+import com.bacorp.soundmirror.streamingservice.data.model.PlaybackState
 import com.bacorp.soundmirror.utils.NetworkHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -103,6 +103,15 @@ class StreamingViewModel @Inject constructor(
         context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
     }
 
+    fun updateStreamingStatus(playbackState: PlaybackState) {
+        when (playbackState) {
+            PlaybackState.Connecting -> _uiState.update { it.copy(isStreaming = false) }
+            is PlaybackState.Error -> _uiState.update { it.copy(errorMessageCode = playbackState.messageResId) }
+            PlaybackState.Idle -> _uiState.update { it.copy(isStreaming = false) }
+            is PlaybackState.Playback -> _uiState.update { it.copy(isStreaming = true) }
+        }
+    }
+
     private fun stopStreaming() {
         if (isBound) {
             streamReceiverServiceBinder?.stopStreaming()
@@ -119,14 +128,5 @@ class StreamingViewModel @Inject constructor(
     override fun onCleared() {
         stopStreaming()
         super.onCleared()
-    }
-
-    fun updateStreamingStatus(playbackState: PlaybackState) {
-        when (playbackState) {
-            PlaybackState.Connecting -> _uiState.update { it.copy(isStreaming = false) }
-            is PlaybackState.Error -> _uiState.update { it.copy(errorMessageCode = playbackState.messageResId) }
-            PlaybackState.Idle -> _uiState.update { it.copy(isStreaming = false) }
-            is PlaybackState.Playback -> _uiState.update { it.copy(isStreaming = true) }
-        }
     }
 }

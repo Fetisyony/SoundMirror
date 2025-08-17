@@ -1,15 +1,17 @@
-package com.bacorp.soundmirror.streamingservice
+package com.bacorp.soundmirror.streamingservice.data
 
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.util.Log
-import com.bacorp.soundmirror.streamingservice.model.AudioFormatInfo
+import com.bacorp.soundmirror.streamingservice.domain.AudioConsumer
+import com.bacorp.soundmirror.streamingservice.data.model.AudioFormatInfo
+import jakarta.inject.Inject
 
-class PlaybackManager {
+class PlaybackManager @Inject constructor() : AudioConsumer {
     private var audioTrack: AudioTrack? = null
 
-    fun initialize(formatInfo: AudioFormatInfo): Boolean {
+    override fun initialize(formatInfo: AudioFormatInfo): Boolean {
         val minBufSize = AudioTrack.getMinBufferSize(
             formatInfo.sampleRate,
             formatInfo.channelConfig,
@@ -51,7 +53,7 @@ class PlaybackManager {
         return true
     }
 
-    fun playChunk(chunk: FloatArray) {
+    override fun playChunk(chunk: FloatArray) {
         val track = audioTrack ?: return
         val samplesCount = chunk.size
         if (samplesCount == 0) return
@@ -72,7 +74,7 @@ class PlaybackManager {
         }
     }
 
-    fun release() {
+    override fun release() {
         audioTrack?.let {
             if (it.playState == AudioTrack.PLAYSTATE_PLAYING) {
                 it.stop()
