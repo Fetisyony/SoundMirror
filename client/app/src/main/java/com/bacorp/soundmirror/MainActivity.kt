@@ -13,13 +13,16 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
-import com.bacorp.soundmirror.ui.composables.ConfigureStatusBarColor
-import com.bacorp.soundmirror.ui.composables.ConnectScreen
-import com.bacorp.soundmirror.ui.theme.SoundMirrorTheme
-import com.bacorp.soundmirror.viewmodel.StreamingViewModel
+import com.bacorp.soundmirror.presentation.ui.composables.ConfigureStatusBarColor
+import com.bacorp.soundmirror.presentation.ui.composables.ConnectScreen
+import com.bacorp.soundmirror.presentation.ui.theme.SoundMirrorTheme
+import com.bacorp.soundmirror.presentation.viewmodel.StreamingViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val viewModel: StreamingViewModel by viewModels()
+
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (!granted) {

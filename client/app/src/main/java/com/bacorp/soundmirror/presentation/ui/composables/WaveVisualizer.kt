@@ -1,4 +1,4 @@
-package com.bacorp.soundmirror.ui.composables
+package com.bacorp.soundmirror.presentation.ui.composables
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode

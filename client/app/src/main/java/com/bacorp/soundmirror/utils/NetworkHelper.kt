@@ -1,13 +1,14 @@
-package com.bacorp.soundmirror.data
+package com.bacorp.soundmirror.utils
 
 import java.net.InetAddress
 import java.net.NetworkInterface
+import kotlin.collections.iterator
 
 /**
  * A small utility that tries to determine the “common network part”
  * of this device’s IP, e.g. “192.168.1.” so the user can quickly choose an address.
  */
-class NetworkHelper() {
+object NetworkHelper {
     fun getCommonNetworkPart(): String? {
         try {
             val interfaces = NetworkInterface.getNetworkInterfaces()
@@ -26,5 +27,11 @@ class NetworkHelper() {
             }
         } catch (_: Exception) {}
         return null
+    }
+
+    fun isIpFormatValid(ip: String): Boolean {
+        val regex =
+            Regex("""^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$""")
+        return regex.matches(ip)
     }
 }

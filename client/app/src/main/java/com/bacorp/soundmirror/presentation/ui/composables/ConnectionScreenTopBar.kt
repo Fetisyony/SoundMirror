@@ -1,4 +1,4 @@
-package com.bacorp.soundmirror.ui.composables
+package com.bacorp.soundmirror.presentation.ui.composables
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box

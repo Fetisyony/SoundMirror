@@ -1,33 +1,33 @@
-package com.bacorp.soundmirror.viewmodel
+package com.bacorp.soundmirror.presentation.viewmodel
 
-import android.app.Application
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bacorp.soundmirror.R
-import com.bacorp.soundmirror.data.NetworkHelper
-import com.bacorp.soundmirror.data.SettingsRepository
-import com.bacorp.soundmirror.state.UiState
+import com.bacorp.soundmirror.domain.PreferencesRepository
+import com.bacorp.soundmirror.presentation.state.UiState
 import com.bacorp.soundmirror.streamingservice.StreamReceiverService
 import com.bacorp.soundmirror.streamingservice.model.PlaybackState
+import com.bacorp.soundmirror.utils.NetworkHelper
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class StreamingViewModel(
-    private val app: Application
-) : AndroidViewModel(app) {
-
-    private val settingsRepo = SettingsRepository(app.applicationContext)
-    private val networkHelper = NetworkHelper()
-
+@HiltViewModel
+class StreamingViewModel @Inject constructor(
+    @ApplicationContext private val appContext: Context,
+    private val settingsRepo: PreferencesRepository
+) : ViewModel() {
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
@@ -59,7 +59,7 @@ class StreamingViewModel(
             settingsRepo.observeIpAddress()
                 .collect { savedIp ->
                     if (savedIp.isEmpty()) {
-                        val common = networkHelper.getCommonNetworkPart()
+                        val common = NetworkHelper.getCommonNetworkPart()
                         _uiState.update { it.copy(ipAddress = common ?: "") }
                     } else {
                         _uiState.update { it.copy(ipAddress = savedIp) }
@@ -82,7 +82,7 @@ class StreamingViewModel(
 
     fun startStreaming() {
         val currentIp = uiState.value.ipAddress.trim()
-        if (!settingsRepo.isValidIpAddress(currentIp)) {
+        if (!NetworkHelper.isIpFormatValid(currentIp)) {
             _uiState.update { it.copy(errorMessageCode = R.string.invalid_ip_address_format_error) }
             return
         }
@@ -95,7 +95,7 @@ class StreamingViewModel(
     }
 
     private fun startForegroundService(ip: String) {
-        val context = app.applicationContext
+        val context = appContext
         val intent = Intent(context, StreamReceiverService::class.java).apply {
             putExtra(StreamReceiverService.EXTRA_IP, ip)
         }
@@ -106,7 +106,7 @@ class StreamingViewModel(
     private fun stopStreaming() {
         if (isBound) {
             streamReceiverServiceBinder?.stopStreaming()
-            getApplication<Application>().applicationContext.unbindService(connection)
+            appContext.unbindService(connection)
             isBound = false
             streamReceiverServiceBinder = null
         }

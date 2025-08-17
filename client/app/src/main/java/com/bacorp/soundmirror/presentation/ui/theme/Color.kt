@@ -1,4 +1,4 @@
-package com.bacorp.soundmirror.ui.theme
+package com.bacorp.soundmirror.presentation.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

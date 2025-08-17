@@ -62,8 +62,7 @@ class StreamReceiverCoordinator(
                     val latency = timeService.getServerTimeMillis() - chunk.departmentTimestamp
                     Log.d("LATENCY_collected", "$latency ms")
 
-                    if (latency - chunk.emittingLatency < 100)
-                        player.playChunk(chunk.data)
+                    player.playChunk(chunk.data)
                 }
             } catch (e: Exception) {
                 handleStreamingError(e)

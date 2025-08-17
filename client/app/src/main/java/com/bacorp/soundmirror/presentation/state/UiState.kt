@@ -1,4 +1,4 @@
-package com.bacorp.soundmirror.state
+package com.bacorp.soundmirror.presentation.state
 
 data class UiState(
     val ipAddress: String = "",

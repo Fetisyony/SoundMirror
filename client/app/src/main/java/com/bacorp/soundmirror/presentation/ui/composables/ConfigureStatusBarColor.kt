@@ -1,5 +1,6 @@
-package com.bacorp.soundmirror.ui.composables
+package com.bacorp.soundmirror.presentation.ui.composables
 
+import android.R
 import android.graphics.Rect
 import android.os.Build
 import android.view.View
@@ -37,7 +38,7 @@ fun ConfigureStatusBarColor(window: Window, isDark: Boolean) {
 
         else -> {
             val decorView = window.decorView
-            val contentView = decorView.findViewById<View>(android.R.id.content)
+            val contentView = decorView.findViewById<View>(R.id.content)
 
             val originalPadding =
                 Rect(
