@@ -6,7 +6,7 @@ object PlaybackConstants {
 
     const val TIMEOUT_MILLIS = 5000
 
-    const val HEADER_SIZE = 6
+    const val FORMAT_PACKET_SIZE = 6
     const val MESSAGE_HEADER_SIZE = 4
     const val TIMESTAMP_SIZE = 8
 }

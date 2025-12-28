@@ -7,6 +7,7 @@
 #include "ErrorCodes.hpp"
 #include "audiostreamingservice/consumer/IConsumerService.hpp"
 #include "config/ConfigManager.hpp"
+#include "network/socketclient/UDPSocketClient.hpp"
 #include "network/socketserver/ISocketServer.hpp"
 
 using namespace std;
@@ -25,11 +26,13 @@ public:
 
     ~StreamingService() override;
 private:
-
     std::shared_ptr<ISocketServer> _server{};
     int _port;
+    std::shared_ptr<UDPSocketClient> _client{};
+
     bool _convertEndianess = ConfigManager::getInstance().getConfig().convertEndianess;
     WAVEFORMATEX *_format{};
+    int64_t _nextPacketTimestamp = -1;
 
     errcode_t start();
     void showHostInfo() const;

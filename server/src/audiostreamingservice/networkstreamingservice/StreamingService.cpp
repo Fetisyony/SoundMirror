@@ -15,6 +15,16 @@ StreamingService::StreamingService(int port) : _port(port) {
 
 errcode_t StreamingService::start() {
     auto rc = _server->start();
+
+    UINT32 streamPort;
+    _server->recvAll(&streamPort, 4);
+    std::cout << streamPort << std::endl;
+
+    char buf[INET_ADDRSTRLEN] = {};
+    inet_ntop(AF_INET, &_server->getClient().sin_addr, buf, sizeof(buf));
+    _client = std::make_shared<UDPSocketClient>();
+    rc = _client->init(std::string(buf), streamPort);
+
     if (rc == OK)
         announceFormat();
     else
@@ -47,28 +57,52 @@ errcode_t StreamingService::initialize(WAVEFORMATEX *format) {
     return OK;
 }
 
+const size_t MAX_UDP_PAYLOAD = 1400;
+const size_t CUSTOM_HEADER_SIZE = 12;
+const size_t MAX_AUDIO_PER_PACKET = MAX_UDP_PAYLOAD - CUSTOM_HEADER_SIZE;
+
 errcode_t StreamingService::consumeNewData(BYTE *data, UINT32 bytesCount) {
     errcode_t rc = OK;
 
-    // Convert the audio data from little-endian to big-endian
+    UINT32 blockAlign = (_format->nBlockAlign > 0) ? _format->nBlockAlign : 4;
+    size_t effectiveMaxPayload = MAX_AUDIO_PER_PACKET - (MAX_AUDIO_PER_PACKET % blockAlign);
+
     if (_convertEndianess)
-        swapSoundEndianess(data, bytesCount / _format->nBlockAlign, _format);
+        swapSoundEndianess(data, bytesCount / blockAlign, _format);
 
-    BYTE header[4];
-    std::memcpy(header, &bytesCount, sizeof(header));
-    if (rc == OK)
-        rc = _server->sendMessage(header, sizeof(header));
+    if (_nextPacketTimestamp == -1) {
+        const auto now = std::chrono::system_clock::now();
+        _nextPacketTimestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+    }
 
-    const auto now = std::chrono::system_clock::now();
-    const int64_t millis = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+    double bytesPerMillis = (double)_format->nAvgBytesPerSec / 1000.0;
+    if (bytesPerMillis <= 0.0) bytesPerMillis = 44.1 * blockAlign;
 
-    BYTE timestamp[8];
-    std::memcpy(timestamp, &millis, sizeof(timestamp));
-    if (rc == OK)
-        rc = _server->sendMessage(timestamp, sizeof(timestamp));
-    if (rc == OK)
-        rc = _server->sendMessage(data, bytesCount);
+    size_t offset = 0;
+    std::vector<BYTE> packetBuffer(2048);
+    while (offset < bytesCount) {
+        size_t remaining = bytesCount - offset;
+        size_t currentChunkSize = (remaining > effectiveMaxPayload) ? effectiveMaxPayload : remaining;
+        size_t totalPacketSize = CUSTOM_HEADER_SIZE + currentChunkSize;
 
+        UINT32 sizeToSend = (UINT32)currentChunkSize;
+
+        std::memcpy(packetBuffer.data(), &sizeToSend, sizeof(sizeToSend));
+
+        std::memcpy(packetBuffer.data() + 4, &_nextPacketTimestamp, 8);
+
+        std::memcpy(packetBuffer.data() + 12, data + offset, currentChunkSize);
+
+        rc = _client->sendMessage(packetBuffer.data(), totalPacketSize);
+        if (rc != OK) {
+            std::cout << "Error sending UDP packet" << std::endl;
+        }
+
+        offset += currentChunkSize;
+
+        double durationMs = (double)currentChunkSize / bytesPerMillis;
+        _nextPacketTimestamp += (int64_t)(durationMs + 0.5);
+    }
     return rc;
 }
 
@@ -95,6 +129,7 @@ void StreamingService::showHostInfo() const {
 
 void StreamingService::destroy() {
     _server->stop();
+    _client->closeSocket();
 }
 
 StreamingService::~StreamingService() {

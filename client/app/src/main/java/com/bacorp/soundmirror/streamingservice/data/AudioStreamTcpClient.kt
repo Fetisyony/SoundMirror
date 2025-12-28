@@ -15,11 +15,16 @@ import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.io.DataInputStream
+import java.io.DataOutputStream
 import java.io.EOFException
 import java.io.InputStream
+import java.net.DatagramPacket
+import java.net.DatagramSocket
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.net.SocketTimeoutException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import javax.inject.Inject
@@ -27,78 +32,125 @@ import javax.inject.Inject
 class AudioStreamTcpClient @Inject constructor(
     private val timeService: TimeService
 ) : AudioStreamClient {
-    private var socket: Socket? = null
-    private lateinit var inputStream: InputStream
+    private var managerSocket: Socket? = null
+    private var udpSocket: DatagramSocket? = null
+
+    private lateinit var managerInputStream: DataInputStream
+    private lateinit var managerOutputStream: DataOutputStream
+
+    private val streamBufferSize = 8192
+
+    @Volatile
+    private var isStreaming = false
 
     override fun initialize(ip: String, port: Int, timeout: Int) {
-        socket = Socket().apply {
+        managerSocket = Socket().apply {
             connect(InetSocketAddress(ip, port), timeout)
         }
-        inputStream = DataInputStream(socket!!.getInputStream())
+        managerInputStream = DataInputStream(managerSocket!!.getInputStream())
+        managerOutputStream = DataOutputStream(managerSocket!!.getOutputStream())
+
+        udpSocket = DatagramSocket(0)  // to select random one
+        udpSocket?.soTimeout = timeout
+
+        val localUdpPort = udpSocket!!.localPort
+        sendUdpPortHandshake(localUdpPort)
+
+        Log.d("AudioClient", "Initialized. Listening for UDP on port: $localUdpPort")
+    }
+
+    private fun sendUdpPortHandshake(port: Int) {
+        try {
+            val buffer = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
+            buffer.putInt(port)
+            managerOutputStream.write(buffer.array())
+            managerOutputStream.flush()
+        } catch (e: Exception) {
+            Log.e("AudioClient", "Failed to send UDP handshake: ${e.message}")
+            throw e
+        }
     }
 
     override fun getFormatInfo(): AudioFormatInfo {
-        val headerBytes = ByteArray(PlaybackConstants.HEADER_SIZE)
-        runBlocking { readFully(inputStream, headerBytes) }
+        val headerBytes = ByteArray(PlaybackConstants.FORMAT_PACKET_SIZE)
+        runBlocking { readFullyTcp(managerInputStream, headerBytes) }
         return parseHeader(headerBytes)
     }
 
     override fun getStream(): Flow<AudioChunk> {
         return flow {
-            val messageHeaderBytes = ByteArray(PlaybackConstants.MESSAGE_HEADER_SIZE)
-            val chunkHeaderBuffer =
-                ByteBuffer.wrap(messageHeaderBytes).order(ByteOrder.LITTLE_ENDIAN)
-            val timestampBytes = ByteArray(PlaybackConstants.TIMESTAMP_SIZE)
-            val timestampBuffer = ByteBuffer.wrap(timestampBytes).order(ByteOrder.LITTLE_ENDIAN)
+            isStreaming = true
 
-            while (true) {
-                readFully(inputStream, messageHeaderBytes)
-                val chunkSize = chunkHeaderBuffer.getInt(0)
-                chunkHeaderBuffer.clear()
+            val packetBuffer = ByteArray(streamBufferSize)
+            val packet = DatagramPacket(packetBuffer, packetBuffer.size)
+            val wrapper = ByteBuffer.wrap(packetBuffer).order(ByteOrder.LITTLE_ENDIAN)
+            var lastReceivedTimestamp: Long = 0
 
-                readFully(inputStream, timestampBytes)
-                val departmentTime = timestampBuffer.getLong(0)
-                timestampBuffer.clear()
+            while (isStreaming && udpSocket != null && !udpSocket!!.isClosed) {
+                try {
+                    packet.length = packetBuffer.size
+                    udpSocket!!.receive(packet)
+                    if (packet.length < PlaybackConstants.MESSAGE_HEADER_SIZE + PlaybackConstants.TIMESTAMP_SIZE) {
+                        continue
+                    }
 
-                val audioData = ByteArray(chunkSize)
-                readFully(inputStream, audioData)
+                    wrapper.clear()
+                    wrapper.limit(packet.length)
 
-                val samplesCount = audioData.size / Float.SIZE_BYTES
-                if (samplesCount == 0) continue
-                val floatBuffer = FloatArray(samplesCount)
-                ByteBuffer.wrap(audioData)
-                    .order(ByteOrder.LITTLE_ENDIAN)
-                    .asFloatBuffer()
-                    .get(floatBuffer)
+                    val chunkSize = wrapper.getInt()
+                    if (chunkSize > packet.length - PlaybackConstants.TIMESTAMP_SIZE - 4) {
+                        continue
+                    }
 
-                val latency = timeService.getServerTimeMillis() - departmentTime
-                Log.d("LATENCY_emitted", "$latency ms")
-                emit(
-                    AudioChunk(
-                        data = floatBuffer,
-                        departmentTimestamp = departmentTime,
-                        emittingLatency = latency
+                    val departmentTime = wrapper.getLong()
+                    if (departmentTime < lastReceivedTimestamp) continue
+
+                    lastReceivedTimestamp = departmentTime
+
+                    val samplesCount = chunkSize / Float.SIZE_BYTES
+                    if (samplesCount == 0) continue
+
+                    val floatBuffer = FloatArray(samplesCount)
+                    wrapper.limit(wrapper.position() + chunkSize)
+                    wrapper.asFloatBuffer().get(floatBuffer)
+
+                    val latency = timeService.getServerTimeMillis() - departmentTime
+                    Log.d("LATENCY_emitted", "$latency ms")
+                    emit(
+                        AudioChunk(
+                            data = floatBuffer,
+                            departmentTimestamp = departmentTime,
+                            emittingLatency = latency
+                        )
                     )
-                )
+                } catch (e: SocketTimeoutException) {
+                    Log.w("AudioClient", "UDP Receive Timeout")
+                } catch (e: Exception) {
+                    if (isStreaming) {
+                        Log.e("AudioClient", "Error receiving UDP: ${e.message}")
+                    }
+                    break
+                }
             }
         }
             .flowOn(Dispatchers.IO)
-            .buffer(10)
-            .conflate()
+            .buffer(3)
     }
 
     override fun disconnect() {
+        isStreaming = false
         try {
-            socket?.close()
-            inputStream.close()
+            managerSocket?.close()
+            udpSocket?.close()
         } catch (e: Exception) {
-            Log.w("AudioStreamRepository", "Error on disconnect: ${e.message}")
+            Log.w("AudioClient", "Error on disconnect: ${e.message}")
         } finally {
-            socket = null
+            managerSocket = null
+            udpSocket = null
         }
     }
 
-    private suspend fun readFully(input: InputStream, buf: ByteArray) {
+    private suspend fun readFullyTcp(input: InputStream, buf: ByteArray) {
         var pos = 0
         while (pos < buf.size) {
             val bytesRead = input.read(buf, pos, buf.size - pos)

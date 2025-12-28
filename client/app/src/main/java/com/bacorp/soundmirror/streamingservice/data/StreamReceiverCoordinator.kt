@@ -50,6 +50,7 @@ class StreamReceiverCoordinator @Inject constructor(
                     PlaybackConstants.TIMEOUT_MILLIS
                 )
                 val formatInfo = client.getFormatInfo()
+                println("${formatInfo.sampleRate}")
 
                 val streamFlow = client.getStream()
 
@@ -62,7 +63,7 @@ class StreamReceiverCoordinator @Inject constructor(
 
                 streamFlow.collect { chunk ->
                     val latency = timeService.getServerTimeMillis() - chunk.departmentTimestamp
-                    Log.d("LATENCY_collected", "$latency ms")
+                    Log.d("LATENCY_collected", "$latency ms ${Thread.currentThread().name}")
 
                     consumer.playChunk(chunk.data)
                 }

@@ -100,6 +100,10 @@ errcode_t UDPSocketServer::recvMessage(BYTE *buffer, UINT32 bufferSize, UINT32 &
     throw NotImplementedException(__FILE__, __FUNCTION__, __LINE__, "recvMessage method not implemented");
 }
 
+sockaddr_in & UDPSocketServer::getClient() {
+    return _clientAddr;
+}
+
 UDPSocketServer::~UDPSocketServer() {
     if (_socket != INVALID_SOCKET) {
         UDPSocketServer::stop();

@@ -20,6 +20,9 @@ public:
 
     errcode_t recvAll(void *data, int size) override;
     errcode_t recvMessage(BYTE *buffer, UINT32 bufferSize, UINT32 &bytes_received) override;
+
+    sockaddr_in &getClient() override;
+
     errcode_t recvMessage(std::vector<BYTE> &message) override;
 
 private:

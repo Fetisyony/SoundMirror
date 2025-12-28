@@ -21,4 +21,6 @@ public:
     virtual errcode_t recvAll(void *data, int size) = 0;
     virtual errcode_t recvMessage(BYTE *buffer, UINT32 bufferSize, UINT32 &bytes_received) = 0;
     virtual errcode_t recvMessage(vector<BYTE> &message) = 0;
+
+    virtual sockaddr_in& getClient() = 0;
 };

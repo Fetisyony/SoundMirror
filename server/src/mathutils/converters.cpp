@@ -9,7 +9,7 @@ unsigned short swapEndianess(unsigned short value) {
 }
 
 int swapSoundEndianess(BYTE *pData, UINT32 numFrames, WAVEFORMATEX *format) {
-    UINT32 numSamples = numFrames * format->nChannels;
+    const UINT32 numSamples = numFrames * format->nChannels;
 
     switch (format->wBitsPerSample) {
         case 16:

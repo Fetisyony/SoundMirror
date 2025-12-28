@@ -141,6 +141,10 @@ errcode_t TCPSocketServer::recvMessage(BYTE *buffer, UINT32 bufferSize, UINT32 &
     return DISCONNECTED;
 }
 
+sockaddr_in & TCPSocketServer::getClient() {
+    return _clientAddr;
+}
+
 TCPSocketServer::~TCPSocketServer() {
     stop();
 }

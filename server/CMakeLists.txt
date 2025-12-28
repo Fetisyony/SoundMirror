@@ -64,6 +64,8 @@ set(
         src/network/socketserver/udpsocketserver/UDPSocketServer.cpp
         src/network/socketserver/udpsocketserver/UDPSocketServer.hpp
         src/network/socketserver/SocketConfig.hpp
+        src/network/socketclient/UdpSocketClient.cpp
+        src/network/socketclient/UdpSocketClient.hpp
 )
 
 add_executable(
