@@ -5,10 +5,10 @@ The repository contains two primary components:
 - Server: a C++ application that reads raw audio data and streams it over a local Wi-Fi network.
 - Client: an Android application built with Kotlin that connects to the server, receives the audio stream, and plays it in real time.
 
-<div style="display: flex; gap: 30px;">
-  <img src="./docs/assets/screenshot-connected.png" alt="Connected" width="220" />
-  <img src="./docs/assets/screenshot-disconnected.png" alt="Disconnected" width="220" />
-</div>
+<p align="center">
+  <img src="./docs/assets/screenshot-connected.png" alt="Connected" width="40%" />
+  <img src="./docs/assets/screenshot-disconnected.png" alt="Disconnected" width="40%" />
+</p>
 
 ### **Build Instructions**
 #### Server
