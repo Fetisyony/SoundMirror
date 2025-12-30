@@ -1,76 +1,78 @@
-#include "ErrorCodes.hpp"
+#include <iostream>
 
+#include "ErrorCodes.hpp"
+#include "spdlog/spdlog.h"
 
 void showWasapiErrorMessage(HRESULT er) {
     switch (er) {
         case OK:
             break;
         case (AUDCLNT_E_ALREADY_INITIALIZED):
-            cout << "AUDCLNT_E_ALREADY_INITIALIZED" << endl;
+            spdlog::error("AUDCLNT_E_ALREADY_INITIALIZED");
             break;
         case (AUDCLNT_E_WRONG_ENDPOINT_TYPE):
-            cout << "AUDCLNT_E_WRONG_ENDPOINT_TYPE" << endl;
+            spdlog::error("AUDCLNT_E_WRONG_ENDPOINT_TYPE");
             break;
         case (AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED):
-            cout << "AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED" << endl;
+            spdlog::error("AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED");
             break;
         case (AUDCLNT_E_BUFFER_SIZE_ERROR):
-            cout << "AUDCLNT_E_BUFFER_SIZE_ERROR" << endl;
+            spdlog::error("AUDCLNT_E_BUFFER_SIZE_ERROR");
             break;
         case (AUDCLNT_E_CPUUSAGE_EXCEEDED):
-            cout << "AUDCLNT_E_CPUUSAGE_EXCEEDED" << endl;
+            spdlog::error("AUDCLNT_E_CPUUSAGE_EXCEEDED");
             break;
         case (AUDCLNT_E_DEVICE_INVALIDATED):
-            cout << "AUDCLNT_E_DEVICE_INVALIDATED" << endl;
+            spdlog::error("AUDCLNT_E_DEVICE_INVALIDATED");
             break;
         case (AUDCLNT_E_DEVICE_IN_USE):
-            cout << "AUDCLNT_E_DEVICE_IN_USE" << endl;
+            spdlog::error("AUDCLNT_E_DEVICE_IN_USE");
             break;
         case (AUDCLNT_E_ENDPOINT_CREATE_FAILED):
-            cout << "AUDCLNT_E_ENDPOINT_CREATE_FAILED" << endl;
+            spdlog::error("AUDCLNT_E_ENDPOINT_CREATE_FAILED");
             break;
         case (AUDCLNT_E_INVALID_DEVICE_PERIOD):
-            cout << "AUDCLNT_E_INVALID_DEVICE_PERIOD" << endl;
+            spdlog::error("AUDCLNT_E_INVALID_DEVICE_PERIOD");
             break;
         case (AUDCLNT_E_UNSUPPORTED_FORMAT):
-            cout << "AUDCLNT_E_UNSUPPORTED_FORMAT" << endl;
+            spdlog::error("AUDCLNT_E_UNSUPPORTED_FORMAT");
             break;
         case (AUDCLNT_E_EXCLUSIVE_MODE_NOT_ALLOWED):
-            cout << "AUDCLNT_E_EXCLUSIVE_MODE_NOT_ALLOWED" << endl;
+            spdlog::error("AUDCLNT_E_EXCLUSIVE_MODE_NOT_ALLOWED");
             break;
         case (AUDCLNT_E_BUFDURATION_PERIOD_NOT_EQUAL):
-            cout << "AUDCLNT_E_BUFDURATION_PERIOD_NOT_EQUAL" << endl;
+            spdlog::error("AUDCLNT_E_BUFDURATION_PERIOD_NOT_EQUAL");
             break;
         case (AUDCLNT_E_SERVICE_NOT_RUNNING):
-            cout << "AUDCLNT_E_SERVICE_NOT_RUNNING" << endl;
+            spdlog::error("AUDCLNT_E_SERVICE_NOT_RUNNING");
             break;
         case (E_POINTER):
-            cout << "E_POINTER" << endl;
+            spdlog::error("E_POINTER");
             break;
         case (E_INVALIDARG):
-            cout << "E_INVALIDARG" << endl;
+            spdlog::error("E_INVALIDARG");
             break;
         case (E_OUTOFMEMORY):
-            cout << "E_OUTOFMEMORY" << endl;
+            spdlog::error("E_OUTOFMEMORY");
             break;
         case (E_NOINTERFACE):
 
-            cout << "E_NOINTERFACE" << endl;
+            spdlog::error("E_NOINTERFACE");
             break;
         case (E_NOTIMPL):
-            cout << "E_NOTIMPL" << endl;
+            spdlog::error("E_NOTIMPL");
             break;
         case (E_FAIL):
-            cout << "E_FAIL" << endl;
+            spdlog::error("E_FAIL");
             break;
         case (E_ACCESSDENIED):
-            cout << "E_ACCESSDENIED" << endl;
+            spdlog::error("E_ACCESSDENIED");
             break;
         case (AUDCLNT_E_RESOURCES_INVALIDATED):
-            cout << "AUDCLNT_E_RESOURCES_INVALIDATED" << endl;
+            spdlog::error("AUDCLNT_E_RESOURCES_INVALIDATED");
             break;
         default:
-            cout << "Unknown error" << endl;
+            spdlog::error("Unknown error");
             break;
     }
 }
