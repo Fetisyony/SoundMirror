@@ -3,6 +3,8 @@
 #include <fstream>
 #include <iostream>
 
+#include "spdlog/spdlog.h"
+
 ConfigManager &ConfigManager::getInstance() {
     static ConfigManager instance;
     return instance;
@@ -12,13 +14,13 @@ ConfigManager::ConfigManager() : m_initialized(false) {}
 
 void ConfigManager::initialize(const std::string &configFilePath) {
     if (m_initialized) {
-        std::cerr << "Warning: ConfigManager already initialized. Skipping re-initialization." << std::endl;
+        spdlog::warn("ConfigManager already initialized. Skipping re-initialization");
         return;
     }
 
     std::ifstream file(configFilePath);
     if (!file.is_open()) {
-        throw std::runtime_error("ConfigManager Error: Failed to open configuration file: " + configFilePath);
+        throw std::runtime_error("Failed to open configuration file: " + configFilePath);
     }
 
     try {
@@ -28,14 +30,14 @@ void ConfigManager::initialize(const std::string &configFilePath) {
         m_config = j.get<AppConfig>();
         m_initialized = true;
 
-        std::cout << "ConfigManager: Configuration loaded successfully from " << configFilePath << std::endl;
+        spdlog::info("[ConfigManager] Configuration loaded successfully from {}", configFilePath);
     } catch (const json::parse_error &e) {
-        throw std::runtime_error("ConfigManager Error: JSON parse error in " + configFilePath + ": " + e.what());
+        throw std::runtime_error("JSON parse error in " + configFilePath + ": " + e.what());
     } catch (const json::type_error &e) {
-        throw std::runtime_error("ConfigManager Error: JSON type mismatch in " + configFilePath + ": " + e.what());
+        throw std::runtime_error("JSON type mismatch in " + configFilePath + ": " + e.what());
     } catch (const std::exception &e) {
         throw std::runtime_error(
-            "ConfigManager Error: An unexpected error occurred while processing " + configFilePath + ": " + e.what());
+            "An unexpected error occurred while processing " + configFilePath + ": " + e.what());
     }
 }
 

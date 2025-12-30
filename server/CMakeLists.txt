@@ -11,61 +11,68 @@ include_directories(src)
 set(
         SERVER_SOURCES
         cmd/app.cpp
-        src/audiostreamingservice/recorder/WASAPIAudioRecorder.cpp
-        src/audiostreamingservice/recorder/WASAPIAudioRecorder.hpp
+        src/remote/soundstreamingservice/recorder/WASAPIAudioRecorder.cpp
+        src/remote/soundstreamingservice/recorder/WASAPIAudioRecorder.hpp
 
-        src/mathutils/converters.cpp
-        src/mathutils/converters.hpp
-
-        src/audiostreamingservice/wavefileconsumerservice/WaveConsumerService.cpp
-        src/audiostreamingservice/wavefileconsumerservice/WaveConsumerService.hpp
+        src/remote/soundstreamingservice/consumerservice/wavefileconsumerservice/WaveConsumerService.cpp
+        src/remote/soundstreamingservice/consumerservice/wavefileconsumerservice/WaveConsumerService.hpp
 
         src/ErrorsConfig.cpp
         src/ErrorCodes.hpp
 
-        src/audiostreamingservice/recorder/creators/builder/WASAPIAudioRecorderBuilder.cpp
-        src/audiostreamingservice/recorder/creators/builder/WASAPIAudioRecorderBuilder.hpp
-        src/audiostreamingservice/recorder/creators/directors/sharedmode/WASAPIAudioSharedModeRecorderDirector.cpp
-        src/audiostreamingservice/recorder/creators/directors/sharedmode/WASAPIAudioSharedModeRecorderDirector.hpp
-        src/audiostreamingservice/recorder/creators/directors/exclusivemode/WASAPIAudioExclusiveModeRecorderDirector.cpp
-        src/audiostreamingservice/recorder/creators/directors/exclusivemode/WASAPIAudioExclusiveModeRecorderDirector.hpp
+        src/remote/soundstreamingservice/recorder/creators/builder/WASAPIAudioRecorderBuilder.cpp
+        src/remote/soundstreamingservice/recorder/creators/builder/WASAPIAudioRecorderBuilder.hpp
+        src/remote/soundstreamingservice/recorder/creators/directors/sharedmode/WASAPIAudioSharedModeRecorderDirector.cpp
+        src/remote/soundstreamingservice/recorder/creators/directors/sharedmode/WASAPIAudioSharedModeRecorderDirector.hpp
+        src/remote/soundstreamingservice/recorder/creators/directors/exclusivemode/WASAPIAudioExclusiveModeRecorderDirector.cpp
+        src/remote/soundstreamingservice/recorder/creators/directors/exclusivemode/WASAPIAudioExclusiveModeRecorderDirector.hpp
 
-        src/audiostreamingservice/recorder/ErrorHandling.hpp
+        src/remote/soundstreamingservice/recorder/ErrorHandling.hpp
 
-        src/audiostreamingservice/recorder/utils.cpp
-        src/audiostreamingservice/recorder/utils.hpp
-        src/audiostreamingservice/recorder/exceptions/BaseRecorderException.hpp
-        src/audiostreamingservice/recorder/exceptions/EventCreationFailureException.hpp
-        src/audiostreamingservice/recorder/exceptions/StartRecordingFailure.hpp
-        src/audiostreamingservice/recorder/exceptions/ChunkRecordingFailure.hpp
-        src/audiostreamingservice/consumer/Consumer.cpp
-        src/audiostreamingservice/consumer/Consumer.hpp
-        src/audiostreamingservice/producer/Producer.cpp
-        src/audiostreamingservice/producer/Producer.hpp
-        src/audiostreamingservice/audiobufferpool/AudioBufferPool.cpp
-        src/audiostreamingservice/audiobufferpool/AudioBufferPool.hpp
-        src/audiostreamingservice/recorder/exceptions/RecorderCreationFailed.hpp
+        src/remote/soundstreamingservice/recorder/utils.cpp
+        src/remote/soundstreamingservice/recorder/utils.hpp
+        src/remote/soundstreamingservice/recorder/exceptions/BaseRecorderException.hpp
+        src/remote/soundstreamingservice/recorder/exceptions/EventCreationFailureException.hpp
+        src/remote/soundstreamingservice/recorder/exceptions/StartRecordingFailure.hpp
+        src/remote/soundstreamingservice/recorder/exceptions/ChunkRecordingFailure.hpp
+        src/remote/soundstreamingservice/consumer/Consumer.cpp
+        src/remote/soundstreamingservice/consumer/Consumer.hpp
+        src/remote/soundstreamingservice/producer/Producer.cpp
+        src/remote/soundstreamingservice/producer/Producer.hpp
+        src/remote/soundstreamingservice/audiobufferpool/AudioBufferPool.cpp
+        src/remote/soundstreamingservice/audiobufferpool/AudioBufferPool.hpp
+        src/remote/soundstreamingservice/recorder/exceptions/RecorderCreationFailed.hpp
         src/constants/QueueSizes.hpp
-        src/audiostreamingservice/networkstreamingservice/StreamingService.cpp
-        src/network/socketserver/tcpsocketserver/TCPSocketServer.cpp
-        src/network/socketserver/tcpsocketserver/TCPSocketServer.hpp
-        src/network/socketserver/ISocketServer.hpp
-        src/audiostreamingservice/networkstreamingservice/StreamingService.hpp
-        src/audiostreamingservice/consumer/IConsumerService.hpp
-        src/audiostreamingservice/wavefileconsumerservice/WaveConstants.hpp
-        src/timesyncservice/TimeSyncService.cpp
-        src/timesyncservice/TimeSyncService.hpp
+        src/remote/soundstreamingservice/consumerservice/networkstreamingservice/StreamingService.cpp
+        src/remote/sockets/socketserver/tcpsocket/TcpConnection.cpp
+        src/remote/sockets/socketserver/tcpsocket/TcpConnection.hpp
+        src/remote/soundstreamingservice/consumerservice/networkstreamingservice/StreamingService.hpp
+        src/remote/soundstreamingservice/consumerservice/IConsumerService.hpp
+        src/remote/soundstreamingservice/consumerservice/wavefileconsumerservice/wave_constants.hpp
+        src/remote/timesyncservice/TimeSyncService.cpp
+        src/remote/timesyncservice/TimeSyncService.hpp
         src/config/ConfigManager.cpp
         src/config/ConfigManager.hpp
-        src/timesyncservice/SyncException.hpp
+        src/remote/timesyncservice/SyncException.hpp
         src/exceptions/BaseException.hpp
-        src/network/networkanalyzer/NetworkAnalyzer.cpp
-        src/network/networkanalyzer/NetworkAnalyzer.hpp
-        src/network/socketserver/udpsocketserver/UDPSocketServer.cpp
-        src/network/socketserver/udpsocketserver/UDPSocketServer.hpp
-        src/network/socketserver/SocketConfig.hpp
-        src/network/socketclient/UdpSocketClient.cpp
-        src/network/socketclient/UdpSocketClient.hpp
+        src/remote/sockets/networkanalyzer/NetworkAnalyzer.cpp
+        src/remote/sockets/networkanalyzer/NetworkAnalyzer.hpp
+        src/remote/sockets/socketserver/SocketConfig.hpp
+        src/remote/sockets/socketclient/UdpSocketClient.cpp
+        src/remote/sockets/socketclient/UdpSocketClient.hpp
+        src/remote/timesyncservice/GetTimestamp.hpp
+        src/remote/sockets/byteorder/ByteOrder.cpp
+        src/remote/sockets/byteorder/ByteOrder.hpp
+        src/remote/soundstreamingservice/Common.hpp
+        src/remote/sockets/exceptions/NetworkExceptions.hpp
+        src/remote/sockets/socketserver/IConnection.hpp
+        src/remote/sockets/socketserver/IAcceptor.hpp
+        src/remote/sockets/socketserver/tcpsocket/TCPAcceptor.cpp
+        src/remote/sockets/socketserver/tcpsocket/TCPAcceptor.hpp
+        src/remote/soundstreamingservice/ControlCodes.hpp
+        src/remote/soundstreamingservice/manager/SoundStreamingManager.cpp
+        src/remote/soundstreamingservice/manager/SoundStreamingManager.hpp
+        src/CommandCodes.hpp
 )
 
 add_executable(
@@ -80,6 +87,14 @@ FetchContent_Declare(
         GIT_TAG v3.12.0
 )
 FetchContent_MakeAvailable(nlohmann_json)
+
+FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY https://github.com/gabime/spdlog.git
+        GIT_TAG        v1.16.0
+)
+FetchContent_MakeAvailable(spdlog)
+
 target_link_libraries(
         server
         PRIVATE
@@ -93,5 +108,6 @@ target_link_libraries(
         Iphlpapi
         nlohmann_json::nlohmann_json
         Boost::lockfree
+        spdlog::spdlog
 )
 target_compile_options(server PRIVATE -Wall -Wextra -pedantic)

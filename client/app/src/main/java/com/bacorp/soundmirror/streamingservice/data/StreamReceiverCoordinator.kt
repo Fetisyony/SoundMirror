@@ -2,6 +2,7 @@ package com.bacorp.soundmirror.streamingservice.data
 
 import android.util.Log
 import com.bacorp.soundmirror.R
+import com.bacorp.soundmirror.streamingservice.data.model.AudioChunk
 import com.bacorp.soundmirror.streamingservice.domain.AudioConsumer
 import com.bacorp.soundmirror.streamingservice.domain.AudioStreamClient
 import com.bacorp.soundmirror.streamingservice.data.model.PlaybackConstants
@@ -13,16 +14,25 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.DataOutputStream
 import java.io.IOException
+import java.net.InetSocketAddress
+import java.net.Socket
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import kotlin.coroutines.cancellation.CancellationException
 
 class StreamReceiverCoordinator @Inject constructor(
-    private val client: AudioStreamClient,
+    private val streamReceiver: AudioStreamClient,
     private val consumer: AudioConsumer,
     private val timeService: TimeService
 ) {
@@ -31,6 +41,8 @@ class StreamReceiverCoordinator @Inject constructor(
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var streamingJob: Job? = null
+
+    private val audioQueue = Channel<AudioChunk>(Channel.UNLIMITED)
 
     fun startStreaming(ip: String) {
         if (state.value is PlaybackState.Playback || state.value is PlaybackState.Connecting) {
@@ -42,35 +54,44 @@ class StreamReceiverCoordinator @Inject constructor(
             try {
                 _state.value = PlaybackState.Connecting
 
+                val masterSocket = Socket().apply {
+                    connect(InetSocketAddress(ip, PlaybackConstants.CONTROL_PORT))
+                }
+                val masterOutputStream = DataOutputStream(masterSocket!!.getOutputStream())
+
+                val buffer = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
+                buffer.putInt(50)
+                masterOutputStream.write(buffer.array())
+                masterOutputStream.flush()
+
                 timeService.initialize(ip, PlaybackConstants.PORT_SYNC)
                 timeService.sync()
 
-                client.initialize(ip,
+                streamReceiver.initialize(ip,
                     PlaybackConstants.PORT_STREAMING,
                     PlaybackConstants.TIMEOUT_MILLIS
                 )
-                val formatInfo = client.getFormatInfo()
+                val formatInfo = streamReceiver.getFormatInfo()
                 println("${formatInfo.sampleRate}")
 
-                val streamFlow = client.getStream()
+                streamReceiver.sendReceiverPort()
 
-                if (state.value is PlaybackState.Connecting) {
-                    if (!consumer.initialize(formatInfo)) {
-                        throw IllegalStateException("Player failed to initialize")
-                    }
-                    _state.value = PlaybackState.Playback(ip)
+                if (!consumer.initialize(formatInfo)) {
+                    throw IllegalStateException("Player failed to initialize")
+                }
+                _state.value = PlaybackState.Playback(ip)
+
+                launch(Dispatchers.IO) {
+                    streamReceiver.startReceiving(audioQueue)
                 }
 
-                streamFlow.collect { chunk ->
-                    val latency = timeService.getServerTimeMillis() - chunk.departmentTimestamp
-                    Log.d("LATENCY_collected", "$latency ms ${Thread.currentThread().name}")
-
-                    consumer.playChunk(chunk.data)
+                launch(Dispatchers.Default) {
+                    consumer.processQueue(audioQueue)
                 }
             } catch (e: Exception) {
-                handleStreamingError(e)
-            } finally {
-                stopInternal()
+                if (e !is CancellationException) {
+                    handleStreamingError(e)
+                }
             }
         }
     }
@@ -89,13 +110,21 @@ class StreamReceiverCoordinator @Inject constructor(
     }
 
     private fun stopInternal() {
-        client.disconnect()
-        consumer.release()
-        _state.value = PlaybackState.Idle
+        while (audioQueue.tryReceive().isSuccess) {}
+        Log.d("RECEIVER", "Stopped")
     }
 
     fun release() {
-        scope.cancel()
-        stopInternal()
+        _state.value = PlaybackState.Idle
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                streamReceiver.disconnect()
+            }
+
+            streamingJob?.cancelAndJoin()
+            consumer.release()
+            stopInternal()
+            scope.cancel()
+        }
     }
 }

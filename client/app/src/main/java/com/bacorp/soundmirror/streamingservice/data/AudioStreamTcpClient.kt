@@ -2,20 +2,22 @@ package com.bacorp.soundmirror.streamingservice.data
 
 import android.media.AudioFormat
 import android.util.Log
-import com.bacorp.soundmirror.streamingservice.domain.AudioStreamClient
 import com.bacorp.soundmirror.streamingservice.data.model.AudioChunk
 import com.bacorp.soundmirror.streamingservice.data.model.AudioFormatInfo
 import com.bacorp.soundmirror.streamingservice.data.model.PlaybackConstants
+import com.bacorp.soundmirror.streamingservice.data.model.PlaybackConstants.UDP_TIMEOUT_MILLIS
+import com.bacorp.soundmirror.streamingservice.domain.AudioStreamClient
 import com.bacorp.soundmirror.timeservice.TimeService
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.buffer
-import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.EOFException
@@ -24,10 +26,12 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 class AudioStreamTcpClient @Inject constructor(
     private val timeService: TimeService
@@ -50,16 +54,18 @@ class AudioStreamTcpClient @Inject constructor(
         managerInputStream = DataInputStream(managerSocket!!.getInputStream())
         managerOutputStream = DataOutputStream(managerSocket!!.getOutputStream())
 
-        udpSocket = DatagramSocket(0)  // to select random one
-        udpSocket?.soTimeout = timeout
-
-        val localUdpPort = udpSocket!!.localPort
-        sendUdpPortHandshake(localUdpPort)
-
-        Log.d("AudioClient", "Initialized. Listening for UDP on port: $localUdpPort")
+        udpSocket = DatagramSocket(0)  // random port
+        udpSocket?.soTimeout = UDP_TIMEOUT_MILLIS
     }
 
-    private fun sendUdpPortHandshake(port: Int) {
+    override fun sendReceiverPort() {
+        val udpPort = udpSocket!!.localPort
+        sendUdpPort(udpPort)
+
+        Log.d("AudioClient", "Initialized. Listening for UDP on port: $udpPort")
+    }
+
+    private fun sendUdpPort(port: Int) {
         try {
             val buffer = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
             buffer.putInt(port)
@@ -73,7 +79,7 @@ class AudioStreamTcpClient @Inject constructor(
 
     override fun getFormatInfo(): AudioFormatInfo {
         val headerBytes = ByteArray(PlaybackConstants.FORMAT_PACKET_SIZE)
-        runBlocking { readFullyTcp(managerInputStream, headerBytes) }
+        readFullyTcp(managerInputStream, headerBytes)
         return parseHeader(headerBytes)
     }
 
@@ -84,7 +90,6 @@ class AudioStreamTcpClient @Inject constructor(
             val packetBuffer = ByteArray(streamBufferSize)
             val packet = DatagramPacket(packetBuffer, packetBuffer.size)
             val wrapper = ByteBuffer.wrap(packetBuffer).order(ByteOrder.LITTLE_ENDIAN)
-            var lastReceivedTimestamp: Long = 0
 
             while (isStreaming && udpSocket != null && !udpSocket!!.isClosed) {
                 try {
@@ -102,10 +107,7 @@ class AudioStreamTcpClient @Inject constructor(
                         continue
                     }
 
-                    val departmentTime = wrapper.getLong()
-                    if (departmentTime < lastReceivedTimestamp) continue
-
-                    lastReceivedTimestamp = departmentTime
+                    val currentId = wrapper.getLong()
 
                     val samplesCount = chunkSize / Float.SIZE_BYTES
                     if (samplesCount == 0) continue
@@ -114,12 +116,11 @@ class AudioStreamTcpClient @Inject constructor(
                     wrapper.limit(wrapper.position() + chunkSize)
                     wrapper.asFloatBuffer().get(floatBuffer)
 
-                    val latency = timeService.getServerTimeMillis() - departmentTime
-                    Log.d("LATENCY_emitted", "$latency ms")
+                    val latency = timeService.getServerTimeMillis() - currentId
                     emit(
                         AudioChunk(
                             data = floatBuffer,
-                            departmentTimestamp = departmentTime,
+                            departmentTimestamp = currentId,
                             emittingLatency = latency
                         )
                     )
@@ -134,28 +135,65 @@ class AudioStreamTcpClient @Inject constructor(
             }
         }
             .flowOn(Dispatchers.IO)
-            .buffer(3)
+    }
+
+    override suspend fun startReceiving(audioQueue: Channel<AudioChunk>) {
+        val packetBuffer = ByteArray(2048)
+        val packet = DatagramPacket(packetBuffer, packetBuffer.size)
+        val wrapper = ByteBuffer.wrap(packetBuffer).order(ByteOrder.LITTLE_ENDIAN)
+
+        while (currentCoroutineContext().isActive && udpSocket != null && !udpSocket!!.isClosed) {
+            try {
+                packet.length = packetBuffer.size
+                udpSocket!!.receive(packet)
+
+                if (packet.length < 12) continue
+                wrapper.clear()
+                val chunkSize = wrapper.getInt()
+                val currentId = wrapper.getLong()
+
+                val samplesCount = chunkSize / 4
+                if (samplesCount == 0) continue
+                val floatBuffer = FloatArray(samplesCount)
+                wrapper.asFloatBuffer().get(floatBuffer)
+
+                audioQueue.trySend(AudioChunk(floatBuffer, currentId, 0))
+            } catch (e: SocketException) {
+                Log.d("UDP", "Socket closed, stopping receiver.")
+                break
+            } catch (e: Exception) {
+                if (e is CancellationException) break
+                Log.e("UDP", "Receive error: ${e.message}")
+                throw e
+            }
+            yield()
+        }
     }
 
     override fun disconnect() {
         isStreaming = false
         try {
+            val buffer = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
+            buffer.putInt(55)
+            managerOutputStream.write(buffer.array())
+            managerOutputStream.flush()
+            Log.d("TCPCLIENT", "Sent 55 to the server")
+
             managerSocket?.close()
             udpSocket?.close()
         } catch (e: Exception) {
-            Log.w("AudioClient", "Error on disconnect: ${e.message}")
+            Log.w("AudioClient", "Error on disconnect: ${e.stackTraceToString()}")
         } finally {
             managerSocket = null
             udpSocket = null
         }
     }
 
-    private suspend fun readFullyTcp(input: InputStream, buf: ByteArray) {
+    private fun readFullyTcp(input: InputStream, buf: ByteArray) {
         var pos = 0
         while (pos < buf.size) {
             val bytesRead = input.read(buf, pos, buf.size - pos)
             if (bytesRead < 0) throw EOFException("Stream ended prematurely")
-            if (bytesRead == 0) delay(1)
             pos += bytesRead
         }
     }

@@ -15,10 +15,11 @@ struct AppConfig {
     bool debugMode;
     bool convertEndianess;
     NetworkConfig network;
+    int durationMilliseconds;
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(NetworkConfig, streamingPort, timeSyncPort, controlPort)
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(AppConfig, debugMode, network)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(AppConfig, debugMode, convertEndianess, network, durationMilliseconds)
 
 class ConfigManager {
 public:
