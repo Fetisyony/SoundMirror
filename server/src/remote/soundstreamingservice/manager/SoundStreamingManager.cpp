@@ -12,7 +12,7 @@
 
 void streamSound() {
     queue_constants::LockfreeAudioQueueType audioQueue;
-    auto bufferPool = std::make_shared<AudioBufferPool>(8192, 256);
+    auto bufferPool = std::make_shared<AudioBufferPool>(960 * 8, 256);
     std::atomic keepRunning{true};
 
     auto producer = Producer(audioQueue, bufferPool, keepRunning);

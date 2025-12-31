@@ -95,6 +95,16 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
+FetchContent_Declare(
+        Opus
+        GIT_REPOSITORY https://github.com/xiph/opus.git
+        GIT_TAG        v1.5.2
+)
+set(OPUS_BUILD_PROGRAMS OFF CACHE BOOL "" FORCE)
+set(OPUS_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(Opus)
+
 target_link_libraries(
         server
         PRIVATE
@@ -109,5 +119,6 @@ target_link_libraries(
         nlohmann_json::nlohmann_json
         Boost::lockfree
         spdlog::spdlog
+        opus
 )
 target_compile_options(server PRIVATE -Wall -Wextra -pedantic)

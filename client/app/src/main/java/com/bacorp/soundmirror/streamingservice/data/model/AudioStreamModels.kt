@@ -1,5 +1,7 @@
 package com.bacorp.soundmirror.streamingservice.data.model
 
+import kotlin.time.TimeSource
+
 data class AudioFormatInfo(
     val sampleRate: Int,
     val channelConfig: Int,
@@ -10,7 +12,8 @@ data class AudioFormatInfo(
 data class AudioChunk(
     val data: FloatArray,
     val departmentTimestamp: Long,
-    val emittingLatency: Long
+    val emittingLatency: Long,
+    val mark: TimeSource.Monotonic.ValueTimeMark
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

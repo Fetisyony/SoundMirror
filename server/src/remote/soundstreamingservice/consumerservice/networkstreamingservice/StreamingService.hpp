@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <windows.h>
+#include <opus.h>
 
 #include "ErrorCodes.hpp"
 #include "remote/soundstreamingservice/consumerservice/IConsumerService.hpp"
@@ -36,9 +37,11 @@ private:
     WAVEFORMATEX *_format{};
     int64_t _id = 0;
 
-    const size_t MAX_UDP_PAYLOAD = 1024;
-    const size_t CUSTOM_HEADER_SIZE = 12;
-    const size_t MAX_AUDIO_PER_PACKET = MAX_UDP_PAYLOAD - CUSTOM_HEADER_SIZE;
+    OpusEncoder *enc = nullptr;
+
+    const int32_t MAX_UDP_PAYLOAD = 1024;
+    const int32_t CUSTOM_HEADER_SIZE = 12;
+    const int32_t MAX_AUDIO_PER_PACKET = MAX_UDP_PAYLOAD - CUSTOM_HEADER_SIZE;
 
     void showHostInfo() const;
     void announceFormat();

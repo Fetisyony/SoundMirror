@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bacorp.soundmirror.R
+import com.bacorp.soundmirror.presentation.state.ConnectionState
 import com.bacorp.soundmirror.presentation.state.UiState
 
 
@@ -41,7 +42,7 @@ fun ConnectScreen(
     val focusManager = LocalFocusManager.current
 
     val waveAmplitude by animateFloatAsState(
-        targetValue = if (uiState.isStreaming) 60f else 10f,
+        targetValue = if (uiState.connection == ConnectionState.CONNECTED) 60f else 8f,
         animationSpec = tween(durationMillis = 1000),
     )
 
@@ -84,10 +85,13 @@ fun ConnectScreen(
                         onToggle()
                     },
                 ) {
-                    val text = if (uiState.isStreaming)
+                    val text = if (uiState.connection == ConnectionState.CONNECTED)
                         stringResource(R.string.disconnect_action)
-                    else
+                    else if (uiState.connection == ConnectionState.DISCONNECTED)
                         stringResource(R.string.connect_action)
+                    else
+                        stringResource(R.string.connecting)
+
                     Text(
                         text = text,
                         fontSize = 18.sp
