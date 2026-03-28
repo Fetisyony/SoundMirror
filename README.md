@@ -1,8 +1,8 @@
 ## **SoundMirror**
 Audio Streaming Application.
 
-The repository contains two primary components:
-- Server: a C++ application that reads raw audio data and streams it over a local Wi-Fi network.
+There are two basic components:
+- Server: a C++ application that captures raw audio data and streams it to clients;
 - Client: an Android application built with Kotlin that connects to the server, receives the audio stream, and plays it in real time.
 
 <p align="center">
