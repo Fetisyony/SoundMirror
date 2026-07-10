@@ -73,12 +73,19 @@ set(
         src/remote/soundstreamingservice/manager/SoundStreamingManager.cpp
         src/remote/soundstreamingservice/manager/SoundStreamingManager.hpp
         src/CommandCodes.hpp
+        src/remote/soundstreamingservice/recorder/IResampler.hpp
+        src/remote/soundstreamingservice/recorder/IAudioRecorder.hpp
+        src/remote/soundstreamingservice/recorder/SoxrResampler.hpp
+        src/remote/soundstreamingservice/recorder/ResamplingAudioRecorderDecorator.hpp
+        src/remote/soundstreamingservice/recorder/MonoDownmixAudioRecorderDecorator.hpp
 )
 
 add_executable(
         server
         ${SERVER_SOURCES}
 )
+
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -95,6 +102,31 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
+set(OPUS_BUILD_SHARED_LIBRARY OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(
+        Opus
+        GIT_REPOSITORY https://github.com/xiph/opus.git
+        GIT_TAG        v1.5.2
+)
+set(OPUS_BUILD_PROGRAMS OFF CACHE BOOL "" FORCE)
+set(OPUS_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(Opus)
+
+list(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules")
+
+FetchContent_Declare(
+        soxr
+        GIT_REPOSITORY https://github.com/chirlu/soxr.git
+        GIT_TAG        0.1.3
+)
+
+set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(WITH_OPENMP OFF CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(soxr)
+
 target_link_libraries(
         server
         PRIVATE
@@ -109,5 +141,7 @@ target_link_libraries(
         nlohmann_json::nlohmann_json
         Boost::lockfree
         spdlog::spdlog
+        opus
+        soxr
 )
 target_compile_options(server PRIVATE -Wall -Wextra -pedantic)

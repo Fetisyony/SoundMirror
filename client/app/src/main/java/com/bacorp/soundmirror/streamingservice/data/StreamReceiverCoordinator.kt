@@ -15,6 +15,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,7 +43,10 @@ class StreamReceiverCoordinator @Inject constructor(
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var streamingJob: Job? = null
 
-    private val audioQueue = Channel<AudioChunk>(Channel.UNLIMITED)
+    private val audioQueue = Channel<AudioChunk>(
+        capacity = 15,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
 
     fun startStreaming(ip: String) {
         if (state.value is PlaybackState.Playback || state.value is PlaybackState.Connecting) {
@@ -72,7 +76,7 @@ class StreamReceiverCoordinator @Inject constructor(
                     PlaybackConstants.TIMEOUT_MILLIS
                 )
                 val formatInfo = streamReceiver.getFormatInfo()
-                println("${formatInfo.sampleRate}")
+                Log.d("StreamReceiverCoordinator", formatInfo.toString())
 
                 streamReceiver.sendReceiverPort()
 

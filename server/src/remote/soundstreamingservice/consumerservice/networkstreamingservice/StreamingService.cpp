@@ -1,7 +1,9 @@
 #include "StreamingService.hpp"
 
 #include <cstring>
+#include <iostream>
 
+#include <opus.h>
 #include <ws2tcpip.h>
 
 #include "remote/sockets/byteorder/ByteOrder.hpp"
@@ -12,11 +14,29 @@
 
 StreamingService::StreamingService(int port) : _port(port) {
     _server = std::make_shared<TcpAcceptor>(_port);
-    _packetBuffer.resize(2048);
+    _packetBuffer.resize(512);
 }
 
 errcode_t StreamingService::initialize(WAVEFORMATEX *format) {
+    _pcmBuffer.reserve(16384);
     _format = format;
+
+    int err = 0;
+    enc = opus_encoder_create(_format->nSamplesPerSec, _format->nChannels, OPUS_APPLICATION_AUDIO, &err);
+    if (!enc || err != OPUS_OK) {
+        throw std::runtime_error(std::string("opus_encoder_create failed: ") + opus_strerror(err));
+    }
+    opus_int32 bitrate = 96000;
+
+    if (_format->nChannels == 2) {
+        bitrate = (_format->nSamplesPerSec <= 16000) ? 40000 : 96000;
+    } else {
+        bitrate = (_format->nSamplesPerSec <= 16000) ? 24000 : 64000;
+    }
+
+    opus_encoder_ctl(enc, OPUS_SET_BITRATE(bitrate));
+    opus_encoder_ctl(enc, OPUS_SET_COMPLEXITY(10));
+    opus_encoder_ctl(enc, OPUS_SET_VBR(1));
 
     _managerSocket = _server->accept();
 
@@ -55,33 +75,57 @@ void StreamingService::announceFormat() {
 errcode_t StreamingService::consumeNewData(BYTE *data, UINT32 bytesCount) {
     errcode_t rc = OK;
 
-    UINT32 blockAlign = (_format->nBlockAlign > 0) ? _format->nBlockAlign : 4;
-    size_t effectiveMaxPayload = MAX_AUDIO_PER_PACKET - (MAX_AUDIO_PER_PACKET % blockAlign);
+    _pcmBuffer.insert(_pcmBuffer.end(), data, data + bytesCount);
 
-    if (_convertEndianess)
-        byteorder::swapSoundEndianess(data, bytesCount / blockAlign, _format);
+    int frameSizeSamples = _format->nSamplesPerSec / 100;
+    uint32_t bytesPerFrame = frameSizeSamples * _format->nBlockAlign;
+    // uint32_t effectiveMaxPayload = MAX_AUDIO_PER_PACKET;
 
-    UINT32 offset = 0;
-    while (offset < bytesCount) {
-        UINT32 remaining = bytesCount - offset;
-        UINT32 currentChunkSize = (remaining > effectiveMaxPayload) ? effectiveMaxPayload : remaining;
-        UINT32 totalPacketSize = CUSTOM_HEADER_SIZE + currentChunkSize;
+    byte outbuf[1500];
+    while (_pcmBuffer.size() - _readPos >= bytesPerFrame) {
 
-        std::memcpy(_packetBuffer.data(), &currentChunkSize, sizeof(currentChunkSize));
-        std::memcpy(_packetBuffer.data() + 4, &_id, 8);
-        std::memcpy(_packetBuffer.data() + 12, data + offset, currentChunkSize);
+        int compressedBytesN = opus_encode_float(
+                    enc,
+                    (const float *)(_pcmBuffer.data() + _readPos),
+                    frameSizeSamples,
+                    outbuf,
+                    sizeof(outbuf)
+                );
+
+        if (compressedBytesN < 0) {
+            spdlog::error("opus_encode_float failed: {}", opus_strerror(compressedBytesN));
+            _readPos += bytesPerFrame;
+            continue;
+        }
+
+        uint32_t currentChunkSize = compressedBytesN;
+        uint32_t totalPacketSize = CUSTOM_HEADER_SIZE + currentChunkSize;
+        uint32_t swappedCurrentChunkSize = byteorder::swapEndianess32(currentChunkSize);
+        uint64_t swappedId = byteorder::swapEndianess64(_id);
+
+        std::memcpy(_packetBuffer.data(), &swappedCurrentChunkSize, sizeof(currentChunkSize));
+        std::memcpy(_packetBuffer.data() + 4, &swappedId, sizeof(swappedId));
+        std::memcpy(_packetBuffer.data() + 12, outbuf, currentChunkSize);
 
         _streamClientSocket->sendMessage(_packetBuffer.data(), totalPacketSize);
-
-        offset += currentChunkSize;
         ++_id;
+
+        _readPos += bytesPerFrame;
+    }
+
+    if (_readPos == _pcmBuffer.size()) {
+        _pcmBuffer.clear();
+        _readPos = 0;
+    } else if (_readPos > 10000) {
+        _pcmBuffer.erase(_pcmBuffer.begin(), _pcmBuffer.begin() + _readPos);
+        _readPos = 0;
     }
 
     return rc;
 }
 
 void StreamingService::sendShort(unsigned short input_little_end) {
-    unsigned short input_big_end = byteorder::swapEndianess(input_little_end);
+    unsigned short input_big_end = byteorder::swapEndianess16(input_little_end);
     BYTE *buf = reinterpret_cast<BYTE *>(&input_big_end);
     _managerSocket->send(buf, sizeof(input_big_end));
 }

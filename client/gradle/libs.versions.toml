@@ -11,6 +11,7 @@ lifecycleRuntimeKtx = "2.9.0"
 activityCompose = "1.10.1"
 composeBom = "2024.09.00"
 lifecycleService = "2.9.2"
+onnxruntimeAndroid = "latest.release"
 ui = "1.8.2"
 
 [libraries]
@@ -32,6 +33,7 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+onnxruntime-android = { module = "com.microsoft.onnxruntime:onnxruntime-android", version.ref = "onnxruntimeAndroid" }
 ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
 
 [plugins]

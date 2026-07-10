@@ -26,7 +26,7 @@ public:
     ~Producer();
 
 private:
-    std::shared_ptr<WASAPIAudioRecorder> _recorder{};
+    std::shared_ptr<IAudioRecorder> _recorder{};
     queue_constants::LockfreeAudioQueueType &_audioQueue;
     std::shared_ptr<AudioBufferPool> _bufferPool;
     std::atomic<bool> &_keepRunning;

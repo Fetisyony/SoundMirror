@@ -69,11 +69,14 @@ void WASAPIAudioRecorder::collectSound(BYTE *destBuffer, UINT64 &bytesReceived, 
         bool isSilent = (flags & AUDCLNT_BUFFERFLAGS_SILENT) || (peakVol < SILENCE_THRESHOLD);
 
         UINT64 bytesToCopy = nFrames * format->nBlockAlign;
-        if (!isSilent) {
+        if (isSilent) {
             // in shared mode, flags & SILENT == 1 means “zero data.”
+            memset(destBuffer + bytesReceived, 0, bytesToCopy);
+            spdlog::info("Silence");
+        } else {
             memcpy(destBuffer + bytesReceived, captureBuffer, bytesToCopy);
-            bytesReceived += bytesToCopy;
         }
+        bytesReceived += bytesToCopy;
         framesProcessed += nFrames;
 
         // well, we took frames that we can accept, let's just skip ones that left

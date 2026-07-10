@@ -6,6 +6,7 @@
     <string name="server_ip_address_entry_description">Server IP Address</string>
     <string name="disconnect_action">Disconnect</string>
     <string name="connect_action">Connect</string>
+    <string name="connecting">Connecting</string>
     <string name="invalid_ip_address_format_error">Invalid IP address</string>
     <string name="unknown_background_error">Unknown error occurred in the background service, try restarting the app</string>
     <string name="notification_title">Notification</string>

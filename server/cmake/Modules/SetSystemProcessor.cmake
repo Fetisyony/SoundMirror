@@ -1,0 +1,5 @@
+function(set_system_processor)
+    if(NOT CMAKE_SYSTEM_PROCESSOR)
+        set(CMAKE_SYSTEM_PROCESSOR "${CMAKE_HOST_SYSTEM_PROCESSOR}" PARENT_SCOPE)
+    endif()
+endfunction()

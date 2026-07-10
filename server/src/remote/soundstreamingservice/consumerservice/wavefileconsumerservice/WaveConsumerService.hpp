@@ -21,6 +21,8 @@ public:
 
     bool isEnough(UINT64 bytesInSecond, double secondsNeed);
 
+    int checkAction() override;
+
     void destroy() override;
 
 private:

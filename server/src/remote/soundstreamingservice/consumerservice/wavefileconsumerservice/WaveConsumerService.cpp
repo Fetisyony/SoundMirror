@@ -72,3 +72,7 @@ void WaveConsumerService::closeFile() {
     if (file)
         fclose(file);
 }
+
+int WaveConsumerService::checkAction() {
+    return 1;
+}

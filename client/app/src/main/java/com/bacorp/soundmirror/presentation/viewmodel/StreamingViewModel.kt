@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bacorp.soundmirror.R
 import com.bacorp.soundmirror.domain.PreferencesRepository
+import com.bacorp.soundmirror.presentation.state.ConnectionState
 import com.bacorp.soundmirror.presentation.state.UiState
 import com.bacorp.soundmirror.streamingservice.StreamReceiverService
 import com.bacorp.soundmirror.streamingservice.data.model.PlaybackState
@@ -50,7 +51,7 @@ class StreamingViewModel @Inject constructor(
         override fun onServiceDisconnected(arg0: ComponentName) {
             isBound = false
             streamReceiverServiceBinder = null
-            _uiState.update { it.copy(isStreaming = false, errorMessageCode = R.string.streaming_stopped) }
+            _uiState.update { it.copy(connection = ConnectionState.DISCONNECTED, errorMessageCode = R.string.streaming_stopped) }
         }
     }
 
@@ -73,9 +74,9 @@ class StreamingViewModel @Inject constructor(
     }
 
     fun onToggle() {
-        if (!_uiState.value.isStreaming) {
+        if (_uiState.value.connection == ConnectionState.DISCONNECTED) {
             startStreaming()
-        } else {
+        } else if (_uiState.value.connection == ConnectionState.CONNECTED) {
             stopStreaming()
         }
     }
@@ -105,10 +106,10 @@ class StreamingViewModel @Inject constructor(
 
     fun updateStreamingStatus(playbackState: PlaybackState) {
         when (playbackState) {
-            PlaybackState.Connecting -> _uiState.update { it.copy(isStreaming = false) }
-            is PlaybackState.Error -> _uiState.update { it.copy(errorMessageCode = playbackState.messageResId) }
-            PlaybackState.Idle -> _uiState.update { it.copy(isStreaming = false) }
-            is PlaybackState.Playback -> _uiState.update { it.copy(isStreaming = true) }
+            PlaybackState.Connecting -> _uiState.update { it.copy(connection = ConnectionState.CONNECTING) }
+            is PlaybackState.Error -> _uiState.update { it.copy(connection = ConnectionState.DISCONNECTED, errorMessageCode = playbackState.messageResId) }
+            PlaybackState.Idle -> _uiState.update { it.copy(connection = ConnectionState.DISCONNECTED) }
+            is PlaybackState.Playback -> _uiState.update { it.copy(connection = ConnectionState.CONNECTED) }
         }
     }
 

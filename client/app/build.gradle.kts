@@ -19,6 +19,12 @@ android {
     compileSdk = 35
 
     defaultConfig {
+        externalNativeBuild {
+            cmake {
+                cppFlags("-std=c++20")
+                arguments("-DANDROID_STL=c++_static")
+            }
+        }
         applicationId = "com.bacorp.soundmirror"
         minSdk = 26
         targetSdk = 35
@@ -26,6 +32,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+        }
     }
 
     signingConfigs {
@@ -63,6 +74,8 @@ android {
 dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+
+    implementation(libs.onnxruntime.android)
 
     implementation(libs.androidx.lifecycle.service)
     implementation(libs.ui)

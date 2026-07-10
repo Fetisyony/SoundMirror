@@ -12,6 +12,8 @@
 
 #include <windows.h>
 
+#include "IAudioRecorder.hpp"
+
 typedef unsigned char BYTE;
 
 #define SECONDS_IN_SHARED_BUFFER 10
@@ -22,7 +24,7 @@ typedef unsigned char BYTE;
         (punk) = NULL;     \
     }
 
-class WASAPIAudioRecorder {
+class WASAPIAudioRecorder : public IAudioRecorder {
     friend class WASAPIAudioRecorderBuilder;
 
 public:
